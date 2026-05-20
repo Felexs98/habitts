@@ -27,6 +27,10 @@ pkg/
 docs/                 — Swagger (генерируется swag)
 ```
 
+## Postman
+
+Коллекция и environment для тестирования API: папка [`postman/`](postman/) — см. [postman/README.md](postman/README.md).
+
 ## Быстрый старт (Docker)
 
 ```bash
