@@ -142,3 +142,17 @@ func (m *mockCheckInRepo) ExistsOnDate(_ context.Context, habitID uint, date tim
 func (m *mockCheckInRepo) CountByHabitID(_ context.Context, habitID uint) (int64, error) {
 	return int64(len(m.byHabit[habitID])), nil
 }
+
+func (m *mockCheckInRepo) CheckedHabitIDsOnDate(_ context.Context, userID uint, date time.Time) (map[uint]bool, error) {
+	d := truncateDate(date)
+	out := make(map[uint]bool)
+	for habitID, list := range m.byHabit {
+		for _, c := range list {
+			if truncateDate(c.Date).Equal(d) {
+				out[habitID] = true
+				break
+			}
+		}
+	}
+	return out, nil
+}

@@ -139,6 +139,51 @@ func TestCalcStreak(t *testing.T) {
 	}
 }
 
+func TestHabitService_List_TodayFilter(t *testing.T) {
+	users := newMockUserRepo()
+	habits := newMockHabitRepo()
+	checkIns := newMockCheckInRepo()
+	svc := NewHabitService(habits, checkIns, users)
+	ctx := context.Background()
+
+	today := time.Now().UTC()
+	todayWd := int(today.Weekday())
+	otherWd := (todayWd + 1) % 7
+
+	habits.Create(ctx, &domain.Habit{UserID: 1, Title: "Daily", Frequency: domain.FrequencyDaily})
+	habits.Create(ctx, &domain.Habit{UserID: 1, Title: "Weekly today", Frequency: domain.FrequencyWeekly, Weekday: &todayWd})
+	habits.Create(ctx, &domain.Habit{UserID: 1, Title: "Weekly other", Frequency: domain.FrequencyWeekly, Weekday: &otherWd})
+	habits.Create(ctx, &domain.Habit{UserID: 1, Title: "Daily done", Frequency: domain.FrequencyDaily})
+	checkIns.Create(ctx, &domain.CheckIn{HabitID: 4, Date: truncateDate(today)})
+
+	list, err := svc.List(ctx, 1, ListHabitsInput{Today: true})
+	if err != nil {
+		t.Fatalf("List() error = %v", err)
+	}
+	if len(list) != 2 {
+		t.Fatalf("today list len = %d, want 2 (daily + weekly today, not done)", len(list))
+	}
+}
+
+func TestHabitService_Create_WeeklyRequiresWeekdayOrDefault(t *testing.T) {
+	users := newMockUserRepo()
+	habits := newMockHabitRepo()
+	checkIns := newMockCheckInRepo()
+	svc := NewHabitService(habits, checkIns, users)
+	ctx := context.Background()
+
+	h, err := svc.Create(ctx, 1, CreateHabitInput{
+		Title:     "Gym",
+		Frequency: "weekly",
+	})
+	if err != nil {
+		t.Fatalf("Create() error = %v", err)
+	}
+	if h.Frequency != domain.FrequencyWeekly || h.Weekday == nil {
+		t.Fatal("expected weekly with weekday set")
+	}
+}
+
 func TestHabitService_Stats_Streak(t *testing.T) {
 	users := newMockUserRepo()
 	habits := newMockHabitRepo()

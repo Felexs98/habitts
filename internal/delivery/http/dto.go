@@ -13,11 +13,15 @@ type loginRequest struct {
 type createHabitRequest struct {
 	Title       string `json:"title" binding:"required"`
 	Description string `json:"description"`
+	Frequency   string `json:"frequency" enums:"daily,weekly" example:"daily"`
+	Weekday     *int   `json:"weekday" example:"1"` // 0=Вс … 6=Сб, для weekly
 }
 
 type updateHabitRequest struct {
 	Title       string `json:"title" binding:"required"`
 	Description string `json:"description"`
+	Frequency   string `json:"frequency" enums:"daily,weekly"`
+	Weekday     *int   `json:"weekday"`
 }
 
 type checkInRequest struct {

@@ -25,4 +25,5 @@ type CheckInRepository interface {
 	ListByHabitID(ctx context.Context, habitID uint) ([]CheckIn, error)
 	ExistsOnDate(ctx context.Context, habitID uint, date time.Time) (bool, error)
 	CountByHabitID(ctx context.Context, habitID uint) (int64, error)
+	CheckedHabitIDsOnDate(ctx context.Context, userID uint, date time.Time) (map[uint]bool, error)
 }

@@ -21,11 +21,19 @@ func NewHabitService(habits domain.HabitRepository, checkIns domain.CheckInRepos
 type CreateHabitInput struct {
 	Title       string
 	Description string
+	Frequency   string
+	Weekday     *int
 }
 
 type UpdateHabitInput struct {
 	Title       string
 	Description string
+	Frequency   string
+	Weekday     *int
+}
+
+type ListHabitsInput struct {
+	Today bool // только привычки, которые нужно выполнить сегодня и ещё не отмечены
 }
 
 type HabitStats struct {
@@ -46,10 +54,29 @@ func (s *HabitService) Create(ctx context.Context, userID uint, in CreateHabitIn
 		return nil, domain.ErrInvalidInput
 	}
 
+	freq, err := domain.ParseFrequency(in.Frequency)
+	if err != nil {
+		return nil, err
+	}
+
+	weekday := in.Weekday
+	if freq == domain.FrequencyWeekly && weekday == nil {
+		w := int(time.Now().UTC().Weekday())
+		weekday = &w
+	}
+	if err := domain.ValidateWeekday(freq, weekday); err != nil {
+		return nil, err
+	}
+	if freq == domain.FrequencyDaily {
+		weekday = nil
+	}
+
 	habit := &domain.Habit{
 		UserID:      userID,
 		Title:       title,
 		Description: strings.TrimSpace(in.Description),
+		Frequency:   freq,
+		Weekday:     weekday,
 	}
 	if err := s.habits.Create(ctx, habit); err != nil {
 		return nil, err
@@ -57,8 +84,32 @@ func (s *HabitService) Create(ctx context.Context, userID uint, in CreateHabitIn
 	return habit, nil
 }
 
-func (s *HabitService) List(ctx context.Context, userID uint) ([]domain.Habit, error) {
-	return s.habits.ListByUserID(ctx, userID)
+func (s *HabitService) List(ctx context.Context, userID uint, in ListHabitsInput) ([]domain.Habit, error) {
+	habits, err := s.habits.ListByUserID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	if !in.Today {
+		return habits, nil
+	}
+
+	today := truncateDate(time.Now().UTC())
+	checked, err := s.checkIns.CheckedHabitIDsOnDate(ctx, userID, today)
+	if err != nil {
+		return nil, err
+	}
+
+	var due []domain.Habit
+	for _, h := range habits {
+		if !domain.IsDueOnDate(&h, today) {
+			continue
+		}
+		if checked[h.ID] {
+			continue
+		}
+		due = append(due, h)
+	}
+	return due, nil
 }
 
 func (s *HabitService) Get(ctx context.Context, userID, habitID uint) (*domain.Habit, error) {
@@ -83,8 +134,29 @@ func (s *HabitService) Update(ctx context.Context, userID, habitID uint, in Upda
 		return nil, domain.ErrInvalidInput
 	}
 
+	freq := habit.Frequency
+	if strings.TrimSpace(in.Frequency) != "" {
+		var err error
+		freq, err = domain.ParseFrequency(in.Frequency)
+		if err != nil {
+			return nil, err
+		}
+	}
+	weekday := in.Weekday
+	if freq == domain.FrequencyWeekly && weekday == nil {
+		weekday = habit.Weekday
+	}
+	if err := domain.ValidateWeekday(freq, weekday); err != nil {
+		return nil, err
+	}
+	if freq == domain.FrequencyDaily {
+		weekday = nil
+	}
+
 	habit.Title = title
 	habit.Description = strings.TrimSpace(in.Description)
+	habit.Frequency = freq
+	habit.Weekday = weekday
 	if err := s.habits.Update(ctx, habit); err != nil {
 		return nil, err
 	}

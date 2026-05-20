@@ -52,6 +52,25 @@ func (r *checkInRepo) CountByHabitID(ctx context.Context, habitID uint) (int64, 
 	return count, err
 }
 
+func (r *checkInRepo) CheckedHabitIDsOnDate(ctx context.Context, userID uint, date time.Time) (map[uint]bool, error) {
+	d := truncateDate(date)
+	var habitIDs []uint
+	err := r.db.WithContext(ctx).
+		Model(&domain.CheckIn{}).
+		Joins("JOIN habits ON habits.id = check_ins.habit_id").
+		Where("habits.user_id = ? AND check_ins.date = ?", userID, d).
+		Distinct("check_ins.habit_id").
+		Pluck("check_ins.habit_id", &habitIDs).Error
+	if err != nil {
+		return nil, err
+	}
+	out := make(map[uint]bool, len(habitIDs))
+	for _, id := range habitIDs {
+		out[id] = true
+	}
+	return out, nil
+}
+
 func truncateDate(t time.Time) time.Time {
 	y, m, d := t.Date()
 	return time.Date(y, m, d, 0, 0, 0, 0, time.UTC)

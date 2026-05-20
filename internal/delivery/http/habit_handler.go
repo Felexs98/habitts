@@ -29,11 +29,13 @@ var (
 
 // List godoc
 // @Summary      Список привычек пользователя
+// @Description  Без параметров — все привычки. `today=true` — только те, что нужно выполнить сегодня и ещё не отмечены.
 // @Tags         habits
 // @Security     BearerAuth
 // @Produce      json
-// @Success      200  {array}   domain.Habit
-// @Failure      401  {object}  errorResponse
+// @Param        today  query     bool  false  "Фильтр «на сегодня»"
+// @Success      200    {array}   domain.Habit
+// @Failure      401    {object}  errorResponse
 // @Router       /habits [get]
 func (h *HabitHandler) List(c *gin.Context) {
 	userID, ok := middleware.GetUserID(c)
@@ -42,7 +44,8 @@ func (h *HabitHandler) List(c *gin.Context) {
 		return
 	}
 
-	list, err := h.habits.List(c.Request.Context(), userID)
+	today := c.Query("today") == "true"
+	list, err := h.habits.List(c.Request.Context(), userID, usecase.ListHabitsInput{Today: today})
 	if err != nil {
 		writeError(c, err)
 		return
@@ -76,6 +79,8 @@ func (h *HabitHandler) Create(c *gin.Context) {
 	habit, err := h.habits.Create(c.Request.Context(), userID, usecase.CreateHabitInput{
 		Title:       req.Title,
 		Description: req.Description,
+		Frequency:   req.Frequency,
+		Weekday:     req.Weekday,
 	})
 	if err != nil {
 		writeError(c, err)
@@ -132,6 +137,8 @@ func (h *HabitHandler) Update(c *gin.Context) {
 	habit, err := h.habits.Update(c.Request.Context(), userID, habitID, usecase.UpdateHabitInput{
 		Title:       req.Title,
 		Description: req.Description,
+		Frequency:   req.Frequency,
+		Weekday:     req.Weekday,
 	})
 	if err != nil {
 		writeError(c, err)
