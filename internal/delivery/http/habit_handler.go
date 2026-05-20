@@ -26,17 +26,19 @@ var (
 	_ = domain.CheckIn{}
 	_ = usecase.CheckInResult{}
 	_ = usecase.HabitStats{}
+	_ = usecase.Dashboard{}
 	_ = usecase.UserAchievementView{}
 )
 
 // List godoc
 // @Summary      Список привычек пользователя
-// @Description  Без параметров — все привычки. `today=true` — только те, что нужно выполнить сегодня и ещё не отмечены.
+// @Description  Активные привычки (по умолчанию). `today=true` — на сегодня, не отмеченные. `archived=true` — архив (soft delete).
 // @Tags         habits
 // @Security     BearerAuth
 // @Produce      json
-// @Param        today  query     bool  false  "Фильтр «на сегодня»"
-// @Success      200    {array}   domain.Habit
+// @Param        today     query  bool  false  "Фильтр «на сегодня»"
+// @Param        archived  query  bool  false  "Только архивные"
+// @Success      200       {array}   domain.Habit
 // @Failure      401    {object}  errorResponse
 // @Router       /habits [get]
 func (h *HabitHandler) List(c *gin.Context) {
@@ -47,7 +49,11 @@ func (h *HabitHandler) List(c *gin.Context) {
 	}
 
 	today := c.Query("today") == "true"
-	list, err := h.habits.List(c.Request.Context(), userID, usecase.ListHabitsInput{Today: today})
+	archived := c.Query("archived") == "true"
+	list, err := h.habits.List(c.Request.Context(), userID, usecase.ListHabitsInput{
+		Today:    today,
+		Archived: archived,
+	})
 	if err != nil {
 		writeError(c, err)
 		return
@@ -150,7 +156,7 @@ func (h *HabitHandler) Update(c *gin.Context) {
 }
 
 // Delete godoc
-// @Summary      Удалить привычку
+// @Summary      Архивировать привычку (soft delete)
 // @Tags         habits
 // @Security     BearerAuth
 // @Param        id  path  int  true  "Habit ID"
@@ -167,6 +173,56 @@ func (h *HabitHandler) Delete(c *gin.Context) {
 		return
 	}
 	c.Status(http.StatusNoContent)
+}
+
+// Restore godoc
+// @Summary      Восстановить привычку из архива
+// @Tags         habits
+// @Security     BearerAuth
+// @Param        id  path  int  true  "Habit ID"
+// @Success      200  {object}  domain.Habit
+// @Failure      404  {object}  errorResponse
+// @Router       /habits/{id}/restore [post]
+func (h *HabitHandler) Restore(c *gin.Context) {
+	userID, habitID, ok := parseHabitID(c)
+	if !ok {
+		return
+	}
+
+	if err := h.habits.Restore(c.Request.Context(), userID, habitID); err != nil {
+		writeError(c, err)
+		return
+	}
+
+	habit, err := h.habits.Get(c.Request.Context(), userID, habitID)
+	if err != nil {
+		writeError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, habit)
+}
+
+// ListCheckIns godoc
+// @Summary      История отметок привычки
+// @Tags         habits
+// @Security     BearerAuth
+// @Produce      json
+// @Param        id  path  int  true  "Habit ID"
+// @Success      200  {array}   domain.CheckIn
+// @Failure      404  {object}  errorResponse
+// @Router       /habits/{id}/check-ins [get]
+func (h *HabitHandler) ListCheckIns(c *gin.Context) {
+	userID, habitID, ok := parseHabitID(c)
+	if !ok {
+		return
+	}
+
+	list, err := h.habits.ListCheckIns(c.Request.Context(), userID, habitID)
+	if err != nil {
+		writeError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, list)
 }
 
 // CheckIn godoc

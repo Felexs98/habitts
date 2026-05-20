@@ -11,9 +11,10 @@ import (
 )
 
 type Handlers struct {
-	Auth         *AuthHandler
-	Habit        *HabitHandler
-	Achievement  *AchievementHandler
+	Auth        *AuthHandler
+	Habit       *HabitHandler
+	Achievement *AchievementHandler
+	Dashboard   *DashboardHandler
 }
 
 func NewRouter(h *Handlers, jwtManager *jwtutil.Manager) *gin.Engine {
@@ -38,12 +39,15 @@ func NewRouter(h *Handlers, jwtManager *jwtutil.Manager) *gin.Engine {
 	protected.Use(middleware.JWT(jwtManager))
 	{
 		protected.GET("/me", h.Auth.Me)
+		protected.GET("/dashboard", h.Dashboard.Get)
 		protected.GET("/achievements", h.Achievement.List)
 		protected.GET("/habits", h.Habit.List)
 		protected.POST("/habits", h.Habit.Create)
 		protected.GET("/habits/:id", h.Habit.Get)
 		protected.PUT("/habits/:id", h.Habit.Update)
 		protected.DELETE("/habits/:id", h.Habit.Delete)
+		protected.POST("/habits/:id/restore", h.Habit.Restore)
+		protected.GET("/habits/:id/check-ins", h.Habit.ListCheckIns)
 		protected.POST("/habits/:id/check-ins", h.Habit.CheckIn)
 		protected.GET("/habits/:id/stats", h.Habit.Stats)
 	}
@@ -56,5 +60,6 @@ func NewHandlers(auth *usecase.AuthService, habits *usecase.HabitService, achiev
 		Auth:        NewAuthHandler(auth),
 		Habit:       NewHabitHandler(habits),
 		Achievement: NewAchievementHandler(achievements),
+		Dashboard:   NewDashboardHandler(habits),
 	}
 }
