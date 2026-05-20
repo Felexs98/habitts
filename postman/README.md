@@ -1,5 +1,11 @@
 # Postman — Habit Tracker API
 
+## Swagger
+
+После изменения API: `swag init -g cmd/api/main.go -o docs --parseInternal` (или `make swagger`), затем `docker compose up --build -d`.
+
+UI: http://localhost:8080/swagger/index.html → **Authorize** → `Bearer <token>`.
+
 ## Импорт
 
 1. Запустите API: `docker compose up -d`

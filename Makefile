@@ -10,7 +10,7 @@ tidy:
 	go mod tidy
 
 swagger:
-	swag init -g cmd/api/main.go -o docs
+	swag init -g cmd/api/main.go -o docs --parseInternal
 
 docker-up:
 	docker compose up --build -d

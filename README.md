@@ -93,8 +93,11 @@ curl -X POST http://localhost:8080/api/v1/habits \
 ```bash
 go install github.com/swaggo/swag/cmd/swag@latest
 make swagger
-# или: swag init -g cmd/api/main.go -o docs
+# или: swag init -g cmd/api/main.go -o docs --parseInternal
+docker compose up --build -d   # пересборка, чтобы UI подхватил docs
 ```
+
+Если в UI «No operations defined» — перегенерируйте docs и пересоберите контейнер `app`.
 
 ## Следующие шаги для диплома
 

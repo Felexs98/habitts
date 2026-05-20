@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"time"
 
+	"habit-tracker/internal/domain"
 	"habit-tracker/internal/middleware"
 	"habit-tracker/internal/usecase"
 
@@ -18,6 +19,12 @@ type HabitHandler struct {
 func NewHabitHandler(habits *usecase.HabitService) *HabitHandler {
 	return &HabitHandler{habits: habits}
 }
+
+// Ссылки на типы для swag (комментарии @Success) и компилятора.
+var (
+	_ = domain.Habit{}
+	_ = domain.CheckIn{}
+)
 
 // List godoc
 // @Summary      Список привычек пользователя
