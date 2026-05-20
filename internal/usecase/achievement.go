@@ -55,20 +55,58 @@ func (s *AchievementService) ListForUser(ctx context.Context, userID uint) ([]Us
 	return out, nil
 }
 
-func (s *HabitService) grantAchievements(ctx context.Context, userID uint, habit *domain.Habit) ([]domain.Achievement, error) {
+func (s *HabitService) grantAchievements(ctx context.Context, userID uint, habit *domain.Habit, user *domain.User) ([]domain.Achievement, error) {
 	var granted []domain.Achievement
 
-	if habit.MaxStreak >= 7 {
-		a, err := s.grantByCode(ctx, userID, domain.AchievementCodeStreak7)
-		if err != nil {
-			return nil, err
-		}
-		if a != nil {
-			granted = append(granted, *a)
-		}
+	totalCheckIns, err := s.totalUserCheckIns(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := s.tryGrant(ctx, userID, domain.AchievementCodeFirstCheckIn, totalCheckIns == 1, &granted); err != nil {
+		return nil, err
+	}
+	if err := s.tryGrant(ctx, userID, domain.AchievementCodeCheckIns10, totalCheckIns >= 10, &granted); err != nil {
+		return nil, err
+	}
+	if err := s.tryGrant(ctx, userID, domain.AchievementCodeLevel3, user.Level >= 3, &granted); err != nil {
+		return nil, err
+	}
+	if err := s.tryGrant(ctx, userID, domain.AchievementCodeStreak7, habit.MaxStreak >= 7, &granted); err != nil {
+		return nil, err
 	}
 
 	return granted, nil
+}
+
+func (s *HabitService) totalUserCheckIns(ctx context.Context, userID uint) (int64, error) {
+	habits, err := s.habits.ListByUserID(ctx, userID, false)
+	if err != nil {
+		return 0, err
+	}
+	var total int64
+	for _, h := range habits {
+		n, err := s.checkIns.CountByHabitID(ctx, h.ID)
+		if err != nil {
+			return 0, err
+		}
+		total += n
+	}
+	return total, nil
+}
+
+func (s *HabitService) tryGrant(ctx context.Context, userID uint, code string, condition bool, granted *[]domain.Achievement) error {
+	if !condition {
+		return nil
+	}
+	a, err := s.grantByCode(ctx, userID, code)
+	if err != nil {
+		return err
+	}
+	if a != nil {
+		*granted = append(*granted, *a)
+	}
+	return nil
 }
 
 func (s *HabitService) grantByCode(ctx context.Context, userID uint, code string) (*domain.Achievement, error) {

@@ -2,7 +2,12 @@ package domain
 
 import "time"
 
-const AchievementCodeStreak7 = "streak_7"
+const (
+	AchievementCodeStreak7      = "streak_7"
+	AchievementCodeFirstCheckIn = "first_check_in"
+	AchievementCodeCheckIns10   = "check_ins_10"
+	AchievementCodeLevel3       = "level_3"
+)
 
 type Achievement struct {
 	ID          uint   `json:"id" gorm:"primaryKey"`

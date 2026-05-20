@@ -181,10 +181,19 @@ type mockAchievementRepo struct {
 }
 
 func newMockAchievementRepo() *mockAchievementRepo {
-	streak7 := &domain.Achievement{ID: 1, Code: domain.AchievementCodeStreak7, Title: "Неделя без перерывов", Description: "7 дней подряд"}
+	seed := []domain.Achievement{
+		{ID: 1, Code: domain.AchievementCodeFirstCheckIn, Title: "Первый шаг"},
+		{ID: 2, Code: domain.AchievementCodeCheckIns10, Title: "Десять побед"},
+		{ID: 3, Code: domain.AchievementCodeLevel3, Title: "Опытный трекер"},
+		{ID: 4, Code: domain.AchievementCodeStreak7, Title: "Неделя без перерывов"},
+	}
+	byCode := make(map[string]*domain.Achievement, len(seed))
+	for i := range seed {
+		byCode[seed[i].Code] = &seed[i]
+	}
 	return &mockAchievementRepo{
-		byCode: map[string]*domain.Achievement{domain.AchievementCodeStreak7: streak7},
-		all:    []domain.Achievement{*streak7},
+		byCode: byCode,
+		all:    seed,
 		byUser: make(map[uint][]domain.UserAchievement),
 	}
 }

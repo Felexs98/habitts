@@ -244,7 +244,7 @@ func (s *HabitService) CheckIn(ctx context.Context, userID, habitID uint, date t
 		return nil, err
 	}
 
-	newAchievements, err := s.grantAchievements(ctx, userID, habit)
+	newAchievements, err := s.grantAchievements(ctx, userID, habit, user)
 	if err != nil {
 		return nil, err
 	}

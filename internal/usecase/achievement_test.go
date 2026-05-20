@@ -14,8 +14,8 @@ func TestAchievementService_ListForUser(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ListForUser() error = %v", err)
 	}
-	if len(list) != 1 {
-		t.Fatalf("len = %d, want 1", len(list))
+	if len(list) != 4 {
+		t.Fatalf("len = %d, want 4 achievements in catalog", len(list))
 	}
 	if list[0].Earned {
 		t.Error("expected not earned yet")

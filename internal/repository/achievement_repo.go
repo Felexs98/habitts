@@ -84,6 +84,21 @@ func (r *achievementRepo) loadUserAchievement(ctx context.Context, id uint) (*do
 func SeedAchievements(db *gorm.DB) error {
 	seed := []domain.Achievement{
 		{
+			Code:        domain.AchievementCodeFirstCheckIn,
+			Title:       "Первый шаг",
+			Description: "Выполните первую отметку привычки",
+		},
+		{
+			Code:        domain.AchievementCodeCheckIns10,
+			Title:       "Десять побед",
+			Description: "Совершите 10 отметок по всем привычкам",
+		},
+		{
+			Code:        domain.AchievementCodeLevel3,
+			Title:       "Опытный трекер",
+			Description: "Достигните 3 уровня профиля",
+		},
+		{
 			Code:        domain.AchievementCodeStreak7,
 			Title:       "Неделя без перерывов",
 			Description: "Достигните серии из 7 дней выполнения привычки",
