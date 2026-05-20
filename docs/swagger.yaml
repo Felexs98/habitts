@@ -1,0 +1,330 @@
+basePath: /api/v1
+definitions:
+  domain.CheckIn:
+    properties:
+      created_at:
+        type: string
+      date:
+        type: string
+      habit_id:
+        type: integer
+      id:
+        type: integer
+    type: object
+  domain.Habit:
+    properties:
+      created_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: integer
+      title:
+        type: string
+      updated_at:
+        type: string
+      user_id:
+        type: integer
+    type: object
+  domain.User:
+    properties:
+      created_at:
+        type: string
+      email:
+        type: string
+      id:
+        type: integer
+      updated_at:
+        type: string
+    type: object
+  http.checkInRequest:
+    properties:
+      date:
+        description: 'YYYY-MM-DD, optional (default: today)'
+        type: string
+    type: object
+  http.createHabitRequest:
+    properties:
+      description:
+        type: string
+      title:
+        type: string
+    required:
+    - title
+    type: object
+  http.errorResponse:
+    properties:
+      error:
+        type: string
+    type: object
+  http.loginRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  http.registerRequest:
+    properties:
+      email:
+        type: string
+      password:
+        minLength: 6
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  http.updateHabitRequest:
+    properties:
+      description:
+        type: string
+      title:
+        type: string
+    required:
+    - title
+    type: object
+  usecase.AuthResult:
+    properties:
+      token:
+        type: string
+      user:
+        $ref: '#/definitions/domain.User'
+    type: object
+  usecase.HabitStats:
+    properties:
+      current_streak:
+        type: integer
+      total_check_ins:
+        type: integer
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: REST API трекера привычек (дипломный MVP)
+  title: Habit Tracker API
+  version: "1.0"
+paths:
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Данные входа
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/http.loginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/usecase.AuthResult'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http.errorResponse'
+      summary: Вход пользователя
+      tags:
+      - auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Данные регистрации
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/http.registerRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/usecase.AuthResult'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/http.errorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/http.errorResponse'
+      summary: Регистрация пользователя
+      tags:
+      - auth
+  /habits:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/domain.Habit'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http.errorResponse'
+      security:
+      - BearerAuth: []
+      summary: Список привычек пользователя
+      tags:
+      - habits
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Данные привычки
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/http.createHabitRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/domain.Habit'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/http.errorResponse'
+      security:
+      - BearerAuth: []
+      summary: Создать привычку
+      tags:
+      - habits
+  /habits/{id}:
+    delete:
+      parameters:
+      - description: Habit ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No Content
+      security:
+      - BearerAuth: []
+      summary: Удалить привычку
+      tags:
+      - habits
+    get:
+      parameters:
+      - description: Habit ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.Habit'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/http.errorResponse'
+      security:
+      - BearerAuth: []
+      summary: Получить привычку по ID
+      tags:
+      - habits
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Habit ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Данные
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/http.updateHabitRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.Habit'
+      security:
+      - BearerAuth: []
+      summary: Обновить привычку
+      tags:
+      - habits
+  /habits/{id}/check-ins:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Habit ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Дата (опционально)
+        in: body
+        name: body
+        schema:
+          $ref: '#/definitions/http.checkInRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/domain.CheckIn'
+      security:
+      - BearerAuth: []
+      summary: Отметить выполнение привычки
+      tags:
+      - habits
+  /habits/{id}/stats:
+    get:
+      parameters:
+      - description: Habit ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/usecase.HabitStats'
+      security:
+      - BearerAuth: []
+      summary: Статистика привычки (streak, всего отметок)
+      tags:
+      - habits
+securityDefinitions:
+  BearerAuth:
+    description: 'JWT токен. Формат: Bearer &lt;token&gt;'
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

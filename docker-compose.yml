@@ -1,0 +1,39 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: habit-postgres
+    environment:
+      POSTGRES_USER: habit
+      POSTGRES_PASSWORD: habit_secret
+      POSTGRES_DB: habit_tracker
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U habit -d habit_tracker"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    container_name: habit-api
+    ports:
+      - "8080:8080"
+    environment:
+      APP_PORT: "8080"
+      APP_ENV: production
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_USER: habit
+      DB_PASSWORD: habit_secret
+      DB_NAME: habit_tracker
+      DB_SSLMODE: disable
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres_data:

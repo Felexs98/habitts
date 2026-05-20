@@ -1,0 +1,24 @@
+# Binaries
+bin/
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Go
+vendor/
+
+# Env
+.env
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# Swagger generated (optional: commit docs/ if you want)
+# docs/docs.go docs/swagger.json docs/swagger.yaml
+
+# OS
+.DS_Store
+Thumbs.db
