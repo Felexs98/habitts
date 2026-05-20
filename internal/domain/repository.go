@@ -27,3 +27,11 @@ type CheckInRepository interface {
 	CountByHabitID(ctx context.Context, habitID uint) (int64, error)
 	CheckedHabitIDsOnDate(ctx context.Context, userID uint, date time.Time) (map[uint]bool, error)
 }
+
+type AchievementRepository interface {
+	FindByCode(ctx context.Context, code string) (*Achievement, error)
+	ListAll(ctx context.Context) ([]Achievement, error)
+	Grant(ctx context.Context, userID, achievementID uint) (*UserAchievement, error)
+	HasUserAchievement(ctx context.Context, userID, achievementID uint) (bool, error)
+	ListByUserID(ctx context.Context, userID uint) ([]UserAchievement, error)
+}

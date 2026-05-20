@@ -7,6 +7,14 @@ import (
 	"habit-tracker/internal/domain"
 )
 
+func newTestHabitService() (*HabitService, *mockUserRepo, *mockHabitRepo, *mockCheckInRepo) {
+	habits := newMockHabitRepo()
+	checkIns := newMockCheckInRepo()
+	users := newMockUserRepo()
+	achievements := newMockAchievementRepo()
+	return NewHabitService(habits, checkIns, users, achievements), users, habits, checkIns
+}
+
 type mockUserRepo struct {
 	byEmail map[string]*domain.User
 	byID    map[uint]*domain.User
@@ -141,6 +149,72 @@ func (m *mockCheckInRepo) ExistsOnDate(_ context.Context, habitID uint, date tim
 
 func (m *mockCheckInRepo) CountByHabitID(_ context.Context, habitID uint) (int64, error) {
 	return int64(len(m.byHabit[habitID])), nil
+}
+
+type mockAchievementRepo struct {
+	byCode   map[string]*domain.Achievement
+	all      []domain.Achievement
+	byUser   map[uint][]domain.UserAchievement
+	nextAID  uint
+	nextUAID uint
+}
+
+func newMockAchievementRepo() *mockAchievementRepo {
+	streak7 := &domain.Achievement{ID: 1, Code: domain.AchievementCodeStreak7, Title: "Неделя без перерывов", Description: "7 дней подряд"}
+	return &mockAchievementRepo{
+		byCode: map[string]*domain.Achievement{domain.AchievementCodeStreak7: streak7},
+		all:    []domain.Achievement{*streak7},
+		byUser: make(map[uint][]domain.UserAchievement),
+	}
+}
+
+func (m *mockAchievementRepo) FindByCode(_ context.Context, code string) (*domain.Achievement, error) {
+	if a, ok := m.byCode[code]; ok {
+		cp := *a
+		return &cp, nil
+	}
+	return nil, domain.ErrNotFound
+}
+
+func (m *mockAchievementRepo) ListAll(_ context.Context) ([]domain.Achievement, error) {
+	return append([]domain.Achievement(nil), m.all...), nil
+}
+
+func (m *mockAchievementRepo) Grant(_ context.Context, userID, achievementID uint) (*domain.UserAchievement, error) {
+	has, _ := m.HasUserAchievement(context.Background(), userID, achievementID)
+	if has {
+		return nil, nil
+	}
+	m.nextUAID++
+	var ach domain.Achievement
+	for _, a := range m.all {
+		if a.ID == achievementID {
+			ach = a
+			break
+		}
+	}
+	ua := domain.UserAchievement{
+		ID:            m.nextUAID,
+		UserID:        userID,
+		AchievementID: achievementID,
+		EarnedAt:      time.Now().UTC(),
+		Achievement:   ach,
+	}
+	m.byUser[userID] = append(m.byUser[userID], ua)
+	return &ua, nil
+}
+
+func (m *mockAchievementRepo) HasUserAchievement(_ context.Context, userID, achievementID uint) (bool, error) {
+	for _, ua := range m.byUser[userID] {
+		if ua.AchievementID == achievementID {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+func (m *mockAchievementRepo) ListByUserID(_ context.Context, userID uint) ([]domain.UserAchievement, error) {
+	return append([]domain.UserAchievement(nil), m.byUser[userID]...), nil
 }
 
 func (m *mockCheckInRepo) CheckedHabitIDsOnDate(_ context.Context, userID uint, date time.Time) (map[uint]bool, error) {

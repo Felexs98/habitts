@@ -33,13 +33,15 @@ func main() {
 	userRepo := repository.NewUserRepository(db)
 	habitRepo := repository.NewHabitRepository(db)
 	checkInRepo := repository.NewCheckInRepository(db)
+	achievementRepo := repository.NewAchievementRepository(db)
 
 	jwtManager := jwtutil.New(cfg.JWTSecret, 24*time.Hour)
 
 	authUC := usecase.NewAuthService(userRepo, jwtManager)
-	habitUC := usecase.NewHabitService(habitRepo, checkInRepo, userRepo)
+	habitUC := usecase.NewHabitService(habitRepo, checkInRepo, userRepo, achievementRepo)
+	achievementUC := usecase.NewAchievementService(achievementRepo)
 
-	handlers := delivery.NewHandlers(authUC, habitUC)
+	handlers := delivery.NewHandlers(authUC, habitUC, achievementUC)
 	router := delivery.NewRouter(handlers, jwtManager)
 
 	addr := ":" + cfg.AppPort

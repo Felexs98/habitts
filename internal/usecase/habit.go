@@ -9,13 +9,24 @@ import (
 )
 
 type HabitService struct {
-	habits   domain.HabitRepository
-	checkIns domain.CheckInRepository
-	users    domain.UserRepository
+	habits       domain.HabitRepository
+	checkIns     domain.CheckInRepository
+	users        domain.UserRepository
+	achievements domain.AchievementRepository
 }
 
-func NewHabitService(habits domain.HabitRepository, checkIns domain.CheckInRepository, users domain.UserRepository) *HabitService {
-	return &HabitService{habits: habits, checkIns: checkIns, users: users}
+func NewHabitService(
+	habits domain.HabitRepository,
+	checkIns domain.CheckInRepository,
+	users domain.UserRepository,
+	achievements domain.AchievementRepository,
+) *HabitService {
+	return &HabitService{
+		habits:       habits,
+		checkIns:     checkIns,
+		users:        users,
+		achievements: achievements,
+	}
 }
 
 type CreateHabitInput struct {
@@ -39,13 +50,17 @@ type ListHabitsInput struct {
 type HabitStats struct {
 	TotalCheckIns int64 `json:"total_check_ins"`
 	CurrentStreak int   `json:"current_streak"`
+	MaxStreak     int   `json:"max_streak"`
 }
 
 type CheckInResult struct {
-	CheckIn   domain.CheckIn `json:"check_in"`
-	XPAwarded int            `json:"xp_awarded"`
-	TotalXP   int            `json:"total_xp"`
-	Level     int            `json:"level"`
+	CheckIn          domain.CheckIn       `json:"check_in"`
+	XPAwarded        int                  `json:"xp_awarded"`
+	TotalXP          int                  `json:"total_xp"`
+	Level            int                  `json:"level"`
+	CurrentStreak    int                  `json:"current_streak"`
+	MaxStreak        int                  `json:"max_streak"`
+	NewAchievements  []domain.Achievement `json:"new_achievements,omitempty"`
 }
 
 func (s *HabitService) Create(ctx context.Context, userID uint, in CreateHabitInput) (*domain.Habit, error) {
@@ -168,7 +183,8 @@ func (s *HabitService) Delete(ctx context.Context, userID, habitID uint) error {
 }
 
 func (s *HabitService) CheckIn(ctx context.Context, userID, habitID uint, date time.Time) (*CheckInResult, error) {
-	if _, err := s.Get(ctx, userID, habitID); err != nil {
+	habit, err := s.Get(ctx, userID, habitID)
+	if err != nil {
 		return nil, err
 	}
 
@@ -189,6 +205,19 @@ func (s *HabitService) CheckIn(ctx context.Context, userID, habitID uint, date t
 		return nil, err
 	}
 
+	list, err := s.checkIns.ListByHabitID(ctx, habitID)
+	if err != nil {
+		return nil, err
+	}
+	streak := domain.CalcStreakEndingOn(list, d)
+	habit.CurrentStreak = streak
+	if streak > habit.MaxStreak {
+		habit.MaxStreak = streak
+	}
+	if err := s.habits.Update(ctx, habit); err != nil {
+		return nil, err
+	}
+
 	user, err := s.users.FindByID(ctx, userID)
 	if err != nil {
 		return nil, err
@@ -200,16 +229,25 @@ func (s *HabitService) CheckIn(ctx context.Context, userID, habitID uint, date t
 		return nil, err
 	}
 
+	newAchievements, err := s.grantAchievements(ctx, userID, habit)
+	if err != nil {
+		return nil, err
+	}
+
 	return &CheckInResult{
-		CheckIn:   *checkIn,
-		XPAwarded: domain.XPPerCheckIn,
-		TotalXP:   user.XP,
-		Level:     user.Level,
+		CheckIn:         *checkIn,
+		XPAwarded:       domain.XPPerCheckIn,
+		TotalXP:         user.XP,
+		Level:           user.Level,
+		CurrentStreak:   habit.CurrentStreak,
+		MaxStreak:       habit.MaxStreak,
+		NewAchievements: newAchievements,
 	}, nil
 }
 
 func (s *HabitService) Stats(ctx context.Context, userID, habitID uint) (*HabitStats, error) {
-	if _, err := s.Get(ctx, userID, habitID); err != nil {
+	habit, err := s.Get(ctx, userID, habitID)
+	if err != nil {
 		return nil, err
 	}
 
@@ -218,14 +256,10 @@ func (s *HabitService) Stats(ctx context.Context, userID, habitID uint) (*HabitS
 		return nil, err
 	}
 
-	list, err := s.checkIns.ListByHabitID(ctx, habitID)
-	if err != nil {
-		return nil, err
-	}
-
 	return &HabitStats{
 		TotalCheckIns: total,
-		CurrentStreak: calcStreak(list),
+		CurrentStreak: habit.CurrentStreak,
+		MaxStreak:     habit.MaxStreak,
 	}, nil
 }
 
@@ -235,24 +269,5 @@ func truncateDate(t time.Time) time.Time {
 }
 
 func calcStreak(checkIns []domain.CheckIn) int {
-	if len(checkIns) == 0 {
-		return 0
-	}
-
-	dates := make(map[string]struct{}, len(checkIns))
-	for _, c := range checkIns {
-		key := c.Date.Format("2006-01-02")
-		dates[key] = struct{}{}
-	}
-
-	streak := 0
-	day := truncateDate(time.Now().UTC())
-	for {
-		if _, ok := dates[day.Format("2006-01-02")]; !ok {
-			break
-		}
-		streak++
-		day = day.AddDate(0, 0, -1)
-	}
-	return streak
+	return domain.CalcStreakEndingOn(checkIns, truncateDate(time.Now().UTC()))
 }

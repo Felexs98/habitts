@@ -10,10 +10,7 @@ import (
 )
 
 func TestHabitService_CheckIn_AwardsXP(t *testing.T) {
-	users := newMockUserRepo()
-	habits := newMockHabitRepo()
-	checkIns := newMockCheckInRepo()
-	svc := NewHabitService(habits, checkIns, users)
+	svc, users, habits, _ := newTestHabitService()
 	ctx := context.Background()
 
 	users.Create(ctx, &domain.User{ID: 1, Email: "u@test.com", XP: 0, Level: 1})
@@ -38,10 +35,7 @@ func TestHabitService_CheckIn_AwardsXP(t *testing.T) {
 }
 
 func TestHabitService_CheckIn_LevelUp(t *testing.T) {
-	users := newMockUserRepo()
-	habits := newMockHabitRepo()
-	checkIns := newMockCheckInRepo()
-	svc := NewHabitService(habits, checkIns, users)
+	svc, users, habits, _ := newTestHabitService()
 	ctx := context.Background()
 
 	users.Create(ctx, &domain.User{ID: 1, Email: "u@test.com", XP: 90, Level: 1})
@@ -57,10 +51,7 @@ func TestHabitService_CheckIn_LevelUp(t *testing.T) {
 }
 
 func TestHabitService_CheckIn_Duplicate(t *testing.T) {
-	users := newMockUserRepo()
-	habits := newMockHabitRepo()
-	checkIns := newMockCheckInRepo()
-	svc := NewHabitService(habits, checkIns, users)
+	svc, users, habits, _ := newTestHabitService()
 	ctx := context.Background()
 
 	users.Create(ctx, &domain.User{ID: 1, Email: "u@test.com"})
@@ -77,10 +68,7 @@ func TestHabitService_CheckIn_Duplicate(t *testing.T) {
 }
 
 func TestHabitService_CheckIn_Forbidden(t *testing.T) {
-	users := newMockUserRepo()
-	habits := newMockHabitRepo()
-	checkIns := newMockCheckInRepo()
-	svc := NewHabitService(habits, checkIns, users)
+	svc, _, habits, _ := newTestHabitService()
 	ctx := context.Background()
 
 	habits.Create(ctx, &domain.Habit{UserID: 1, Title: "Other user habit"})
@@ -140,10 +128,7 @@ func TestCalcStreak(t *testing.T) {
 }
 
 func TestHabitService_List_TodayFilter(t *testing.T) {
-	users := newMockUserRepo()
-	habits := newMockHabitRepo()
-	checkIns := newMockCheckInRepo()
-	svc := NewHabitService(habits, checkIns, users)
+	svc, _, habits, checkIns := newTestHabitService()
 	ctx := context.Background()
 
 	today := time.Now().UTC()
@@ -166,10 +151,7 @@ func TestHabitService_List_TodayFilter(t *testing.T) {
 }
 
 func TestHabitService_Create_WeeklyRequiresWeekdayOrDefault(t *testing.T) {
-	users := newMockUserRepo()
-	habits := newMockHabitRepo()
-	checkIns := newMockCheckInRepo()
-	svc := NewHabitService(habits, checkIns, users)
+	svc, _, _, _ := newTestHabitService()
 	ctx := context.Background()
 
 	h, err := svc.Create(ctx, 1, CreateHabitInput{
@@ -184,14 +166,59 @@ func TestHabitService_Create_WeeklyRequiresWeekdayOrDefault(t *testing.T) {
 	}
 }
 
-func TestHabitService_Stats_Streak(t *testing.T) {
-	users := newMockUserRepo()
-	habits := newMockHabitRepo()
-	checkIns := newMockCheckInRepo()
-	svc := NewHabitService(habits, checkIns, users)
+func TestHabitService_CheckIn_UpdatesStreakInDB(t *testing.T) {
+	svc, users, habits, _ := newTestHabitService()
 	ctx := context.Background()
 
-	habits.Create(ctx, &domain.Habit{UserID: 1, Title: "Water"})
+	users.Create(ctx, &domain.User{ID: 1, Email: "u@test.com"})
+	habits.Create(ctx, &domain.Habit{UserID: 1, Title: "Run"})
+	day := time.Date(2026, 5, 20, 0, 0, 0, 0, time.UTC)
+
+	result, err := svc.CheckIn(ctx, 1, 1, day)
+	if err != nil {
+		t.Fatalf("CheckIn() error = %v", err)
+	}
+	if result.CurrentStreak != 1 || result.MaxStreak != 1 {
+		t.Errorf("result streak current=%d max=%d", result.CurrentStreak, result.MaxStreak)
+	}
+
+	habit, _ := habits.FindByID(ctx, 1)
+	if habit.CurrentStreak != 1 || habit.MaxStreak != 1 {
+		t.Errorf("habit DB streak current=%d max=%d", habit.CurrentStreak, habit.MaxStreak)
+	}
+}
+
+func TestHabitService_CheckIn_GrantsStreak7Achievement(t *testing.T) {
+	svc, users, habits, checkIns := newTestHabitService()
+	users.Create(context.Background(), &domain.User{ID: 1, Email: "u@test.com"})
+	ctx := context.Background()
+
+	habits.Create(ctx, &domain.Habit{UserID: 1, Title: "Streak habit", MaxStreak: 6, CurrentStreak: 6})
+	base := time.Date(2026, 5, 20, 0, 0, 0, 0, time.UTC)
+	for i := 1; i <= 6; i++ {
+		checkIns.Create(ctx, &domain.CheckIn{HabitID: 1, Date: base.AddDate(0, 0, -i)})
+	}
+
+	result, err := svc.CheckIn(ctx, 1, 1, base)
+	if err != nil {
+		t.Fatalf("CheckIn() error = %v", err)
+	}
+	if result.MaxStreak < 7 {
+		t.Fatalf("max_streak = %d, want >= 7", result.MaxStreak)
+	}
+	if len(result.NewAchievements) != 1 {
+		t.Fatalf("new_achievements len = %d, want 1", len(result.NewAchievements))
+	}
+	if result.NewAchievements[0].Code != domain.AchievementCodeStreak7 {
+		t.Errorf("achievement code = %s", result.NewAchievements[0].Code)
+	}
+}
+
+func TestHabitService_Stats_Streak(t *testing.T) {
+	svc, _, habits, checkIns := newTestHabitService()
+	ctx := context.Background()
+
+	habits.Create(ctx, &domain.Habit{UserID: 1, Title: "Water", CurrentStreak: 2, MaxStreak: 5})
 	today := truncateDate(time.Now().UTC())
 	checkIns.Create(ctx, &domain.CheckIn{HabitID: 1, Date: today})
 	checkIns.Create(ctx, &domain.CheckIn{HabitID: 1, Date: today.AddDate(0, 0, -1)})
@@ -205,5 +232,8 @@ func TestHabitService_Stats_Streak(t *testing.T) {
 	}
 	if stats.CurrentStreak != 2 {
 		t.Errorf("current_streak = %d, want 2", stats.CurrentStreak)
+	}
+	if stats.MaxStreak != 5 {
+		t.Errorf("max_streak = %d, want 5", stats.MaxStreak)
 	}
 }

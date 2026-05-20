@@ -23,8 +23,14 @@ func NewPostgres(dsn string) (*gorm.DB, error) {
 		&domain.User{},
 		&domain.Habit{},
 		&domain.CheckIn{},
+		&domain.Achievement{},
+		&domain.UserAchievement{},
 	); err != nil {
 		return nil, fmt.Errorf("auto migrate: %w", err)
+	}
+
+	if err := SeedAchievements(db); err != nil {
+		return nil, fmt.Errorf("seed achievements: %w", err)
 	}
 
 	log.Println("database migrated successfully")

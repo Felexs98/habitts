@@ -25,6 +25,8 @@ var (
 	_ = domain.Habit{}
 	_ = domain.CheckIn{}
 	_ = usecase.CheckInResult{}
+	_ = usecase.HabitStats{}
+	_ = usecase.UserAchievementView{}
 )
 
 // List godoc
