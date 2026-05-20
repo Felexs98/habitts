@@ -64,12 +64,16 @@ func (m *mockUserRepo) Update(_ context.Context, user *domain.User) error {
 }
 
 type mockHabitRepo struct {
-	habits map[uint]*domain.Habit
-	nextID uint
+	habits    map[uint]*domain.Habit
+	deletedAt map[uint]bool
+	nextID    uint
 }
 
 func newMockHabitRepo() *mockHabitRepo {
-	return &mockHabitRepo{habits: make(map[uint]*domain.Habit)}
+	return &mockHabitRepo{
+		habits:    make(map[uint]*domain.Habit),
+		deletedAt: make(map[uint]bool),
+	}
 }
 
 func (m *mockHabitRepo) Create(_ context.Context, habit *domain.Habit) error {
@@ -81,6 +85,9 @@ func (m *mockHabitRepo) Create(_ context.Context, habit *domain.Habit) error {
 }
 
 func (m *mockHabitRepo) FindByID(_ context.Context, id uint) (*domain.Habit, error) {
+	if m.deletedAt[id] {
+		return nil, domain.ErrNotFound
+	}
 	if h, ok := m.habits[id]; ok {
 		cp := *h
 		return &cp, nil
@@ -88,12 +95,17 @@ func (m *mockHabitRepo) FindByID(_ context.Context, id uint) (*domain.Habit, err
 	return nil, domain.ErrNotFound
 }
 
-func (m *mockHabitRepo) ListByUserID(_ context.Context, userID uint) ([]domain.Habit, error) {
+func (m *mockHabitRepo) ListByUserID(_ context.Context, userID uint, archived bool) ([]domain.Habit, error) {
 	var list []domain.Habit
-	for _, h := range m.habits {
-		if h.UserID == userID {
-			list = append(list, *h)
+	for id, h := range m.habits {
+		if h.UserID != userID {
+			continue
 		}
+		isArchived := m.deletedAt[id]
+		if archived != isArchived {
+			continue
+		}
+		list = append(list, *h)
 	}
 	return list, nil
 }
@@ -109,10 +121,19 @@ func (m *mockHabitRepo) Update(_ context.Context, habit *domain.Habit) error {
 
 func (m *mockHabitRepo) Delete(_ context.Context, id, userID uint) error {
 	h, ok := m.habits[id]
-	if !ok || h.UserID != userID {
+	if !ok || h.UserID != userID || m.deletedAt[id] {
 		return domain.ErrNotFound
 	}
-	delete(m.habits, id)
+	m.deletedAt[id] = true
+	return nil
+}
+
+func (m *mockHabitRepo) Restore(_ context.Context, id, userID uint) error {
+	h, ok := m.habits[id]
+	if !ok || h.UserID != userID || !m.deletedAt[id] {
+		return domain.ErrNotFound
+	}
+	delete(m.deletedAt, id)
 	return nil
 }
 

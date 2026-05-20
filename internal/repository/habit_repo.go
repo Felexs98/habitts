@@ -33,9 +33,13 @@ func (r *habitRepo) FindByID(ctx context.Context, id uint) (*domain.Habit, error
 	return &habit, nil
 }
 
-func (r *habitRepo) ListByUserID(ctx context.Context, userID uint) ([]domain.Habit, error) {
+func (r *habitRepo) ListByUserID(ctx context.Context, userID uint, archived bool) ([]domain.Habit, error) {
 	var habits []domain.Habit
-	err := r.db.WithContext(ctx).Where("user_id = ?", userID).Order("created_at DESC").Find(&habits).Error
+	q := r.db.WithContext(ctx).Where("user_id = ?", userID)
+	if archived {
+		q = q.Unscoped().Where("deleted_at IS NOT NULL")
+	}
+	err := q.Order("created_at DESC").Find(&habits).Error
 	return habits, err
 }
 
@@ -45,6 +49,21 @@ func (r *habitRepo) Update(ctx context.Context, habit *domain.Habit) error {
 
 func (r *habitRepo) Delete(ctx context.Context, id, userID uint) error {
 	res := r.db.WithContext(ctx).Where("id = ? AND user_id = ?", id, userID).Delete(&domain.Habit{})
+	if res.Error != nil {
+		return res.Error
+	}
+	if res.RowsAffected == 0 {
+		return domain.ErrNotFound
+	}
+	return nil
+}
+
+func (r *habitRepo) Restore(ctx context.Context, id, userID uint) error {
+	res := r.db.WithContext(ctx).
+		Unscoped().
+		Model(&domain.Habit{}).
+		Where("id = ? AND user_id = ? AND deleted_at IS NOT NULL", id, userID).
+		Update("deleted_at", nil)
 	if res.Error != nil {
 		return res.Error
 	}

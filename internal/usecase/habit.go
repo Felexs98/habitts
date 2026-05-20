@@ -44,7 +44,8 @@ type UpdateHabitInput struct {
 }
 
 type ListHabitsInput struct {
-	Today bool // только привычки, которые нужно выполнить сегодня и ещё не отмечены
+	Today    bool 
+	Archived bool 
 }
 
 type HabitStats struct {
@@ -100,7 +101,11 @@ func (s *HabitService) Create(ctx context.Context, userID uint, in CreateHabitIn
 }
 
 func (s *HabitService) List(ctx context.Context, userID uint, in ListHabitsInput) ([]domain.Habit, error) {
-	habits, err := s.habits.ListByUserID(ctx, userID)
+	if in.Today && in.Archived {
+		return nil, domain.ErrInvalidInput
+	}
+
+	habits, err := s.habits.ListByUserID(ctx, userID, in.Archived)
 	if err != nil {
 		return nil, err
 	}
@@ -179,7 +184,17 @@ func (s *HabitService) Update(ctx context.Context, userID, habitID uint, in Upda
 }
 
 func (s *HabitService) Delete(ctx context.Context, userID, habitID uint) error {
+	if _, err := s.Get(ctx, userID, habitID); err != nil {
+		return err
+	}
 	return s.habits.Delete(ctx, habitID, userID)
+}
+
+func (s *HabitService) Restore(ctx context.Context, userID, habitID uint) error {
+	if err := s.habits.Restore(ctx, habitID, userID); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (s *HabitService) CheckIn(ctx context.Context, userID, habitID uint, date time.Time) (*CheckInResult, error) {
