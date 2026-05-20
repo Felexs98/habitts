@@ -11,10 +11,11 @@ import (
 type HabitService struct {
 	habits   domain.HabitRepository
 	checkIns domain.CheckInRepository
+	users    domain.UserRepository
 }
 
-func NewHabitService(habits domain.HabitRepository, checkIns domain.CheckInRepository) *HabitService {
-	return &HabitService{habits: habits, checkIns: checkIns}
+func NewHabitService(habits domain.HabitRepository, checkIns domain.CheckInRepository, users domain.UserRepository) *HabitService {
+	return &HabitService{habits: habits, checkIns: checkIns, users: users}
 }
 
 type CreateHabitInput struct {
@@ -30,6 +31,13 @@ type UpdateHabitInput struct {
 type HabitStats struct {
 	TotalCheckIns int64 `json:"total_check_ins"`
 	CurrentStreak int   `json:"current_streak"`
+}
+
+type CheckInResult struct {
+	CheckIn   domain.CheckIn `json:"check_in"`
+	XPAwarded int            `json:"xp_awarded"`
+	TotalXP   int            `json:"total_xp"`
+	Level     int            `json:"level"`
 }
 
 func (s *HabitService) Create(ctx context.Context, userID uint, in CreateHabitInput) (*domain.Habit, error) {
@@ -87,7 +95,7 @@ func (s *HabitService) Delete(ctx context.Context, userID, habitID uint) error {
 	return s.habits.Delete(ctx, habitID, userID)
 }
 
-func (s *HabitService) CheckIn(ctx context.Context, userID, habitID uint, date time.Time) (*domain.CheckIn, error) {
+func (s *HabitService) CheckIn(ctx context.Context, userID, habitID uint, date time.Time) (*CheckInResult, error) {
 	if _, err := s.Get(ctx, userID, habitID); err != nil {
 		return nil, err
 	}
@@ -108,7 +116,24 @@ func (s *HabitService) CheckIn(ctx context.Context, userID, habitID uint, date t
 	if err := s.checkIns.Create(ctx, checkIn); err != nil {
 		return nil, err
 	}
-	return checkIn, nil
+
+	user, err := s.users.FindByID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	user.XP += domain.XPPerCheckIn
+	user.Level = domain.LevelFromXP(user.XP)
+	if err := s.users.Update(ctx, user); err != nil {
+		return nil, err
+	}
+
+	return &CheckInResult{
+		CheckIn:   *checkIn,
+		XPAwarded: domain.XPPerCheckIn,
+		TotalXP:   user.XP,
+		Level:     user.Level,
+	}, nil
 }
 
 func (s *HabitService) Stats(ctx context.Context, userID, habitID uint) (*HabitStats, error) {

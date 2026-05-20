@@ -37,7 +37,7 @@ func main() {
 	jwtManager := jwtutil.New(cfg.JWTSecret, 24*time.Hour)
 
 	authUC := usecase.NewAuthService(userRepo, jwtManager)
-	habitUC := usecase.NewHabitService(habitRepo, checkInRepo)
+	habitUC := usecase.NewHabitService(habitRepo, checkInRepo, userRepo)
 
 	handlers := delivery.NewHandlers(authUC, habitUC)
 	router := delivery.NewRouter(handlers, jwtManager)

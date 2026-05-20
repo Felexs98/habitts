@@ -44,3 +44,7 @@ func (r *userRepo) FindByID(ctx context.Context, id uint) (*domain.User, error) 
 	}
 	return &user, nil
 }
+
+func (r *userRepo) Update(ctx context.Context, user *domain.User) error {
+	return r.db.WithContext(ctx).Save(user).Error
+}

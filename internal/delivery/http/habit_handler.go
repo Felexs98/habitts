@@ -24,6 +24,7 @@ func NewHabitHandler(habits *usecase.HabitService) *HabitHandler {
 var (
 	_ = domain.Habit{}
 	_ = domain.CheckIn{}
+	_ = usecase.CheckInResult{}
 )
 
 // List godoc
@@ -167,7 +168,7 @@ func (h *HabitHandler) Delete(c *gin.Context) {
 // @Produce      json
 // @Param        id    path      int              true  "Habit ID"
 // @Param        body  body      checkInRequest   false  "Дата (опционально)"
-// @Success      201   {object}  domain.CheckIn
+// @Success      201   {object}  usecase.CheckInResult
 // @Router       /habits/{id}/check-ins [post]
 func (h *HabitHandler) CheckIn(c *gin.Context) {
 	userID, habitID, ok := parseHabitID(c)
@@ -188,12 +189,12 @@ func (h *HabitHandler) CheckIn(c *gin.Context) {
 		date = parsed
 	}
 
-	checkIn, err := h.habits.CheckIn(c.Request.Context(), userID, habitID, date)
+	result, err := h.habits.CheckIn(c.Request.Context(), userID, habitID, date)
 	if err != nil {
 		writeError(c, err)
 		return
 	}
-	c.JSON(http.StatusCreated, checkIn)
+	c.JSON(http.StatusCreated, result)
 }
 
 // Stats godoc

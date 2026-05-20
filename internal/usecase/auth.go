@@ -53,6 +53,8 @@ func (s *AuthService) Register(ctx context.Context, in RegisterInput) (*AuthResu
 	user := &domain.User{
 		Email:        email,
 		PasswordHash: passwordHash,
+		XP:           0,
+		Level:        1,
 	}
 	if err := s.users.Create(ctx, user); err != nil {
 		return nil, err
@@ -83,4 +85,8 @@ func (s *AuthService) Login(ctx context.Context, in LoginInput) (*AuthResult, er
 	}
 
 	return &AuthResult{Token: token, User: *user}, nil
+}
+
+func (s *AuthService) GetMe(ctx context.Context, userID uint) (*domain.User, error) {
+	return s.users.FindByID(ctx, userID)
 }
