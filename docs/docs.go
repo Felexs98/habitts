@@ -319,7 +319,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/domain.CheckIn"
+                            "$ref": "#/definitions/usecase.CheckInResult"
                         }
                     }
                 }
@@ -353,6 +353,42 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/usecase.HabitStats"
+                        }
+                    }
+                }
+            }
+        },
+        "/me": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Профиль текущего пользователя",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/domain.User"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/http.errorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/http.errorResponse"
                         }
                     }
                 }
@@ -412,8 +448,14 @@ const docTemplate = `{
                 "id": {
                     "type": "integer"
                 },
+                "level": {
+                    "type": "integer"
+                },
                 "updated_at": {
                     "type": "string"
+                },
+                "xp": {
+                    "type": "integer"
                 }
             }
         },
@@ -501,6 +543,23 @@ const docTemplate = `{
                 },
                 "user": {
                     "$ref": "#/definitions/domain.User"
+                }
+            }
+        },
+        "usecase.CheckInResult": {
+            "type": "object",
+            "properties": {
+                "check_in": {
+                    "$ref": "#/definitions/domain.CheckIn"
+                },
+                "level": {
+                    "type": "integer"
+                },
+                "total_xp": {
+                    "type": "integer"
+                },
+                "xp_awarded": {
+                    "type": "integer"
                 }
             }
         },

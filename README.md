@@ -27,6 +27,14 @@ pkg/
 docs/                 — Swagger (генерируется swag)
 ```
 
+## Геймификация
+
+- При регистрации: `xp = 0`, `level = 1`
+- Каждый check-in: **+10 XP**
+- Уровень: `level = xp / 100 + 1` (каждые 100 XP — новый уровень)
+- `GET /api/v1/me` — профиль с прогрессом
+- Ответ check-in включает `xp_awarded`, `total_xp`, `level`
+
 ## Postman
 
 Коллекция и environment для тестирования API: папка [`postman/`](postman/) — см. [postman/README.md](postman/README.md).
@@ -68,6 +76,7 @@ go run ./cmd/api
 |-------|------|------|
 | POST | `/api/v1/auth/register` | — |
 | POST | `/api/v1/auth/login` | — |
+| GET | `/api/v1/me` | Bearer JWT (xp, level) |
 | GET/POST | `/api/v1/habits` | Bearer JWT |
 | GET/PUT/DELETE | `/api/v1/habits/:id` | Bearer JWT |
 | POST | `/api/v1/habits/:id/check-ins` | Bearer JWT |

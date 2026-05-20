@@ -111,6 +111,49 @@
 						"description": "Вход. При успехе сохраняет JWT в `token`."
 					},
 					"response": []
+				},
+				{
+					"name": "Get Me (profile)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status 200 OK', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const json = pm.response.json();",
+									"pm.test('Has gamification fields', function () {",
+									"    pm.expect(json).to.have.property('xp');",
+									"    pm.expect(json).to.have.property('level');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}{{apiPrefix}}/me",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "me"]
+						},
+						"description": "Профиль: email, xp, level. Нужен JWT."
+					},
+					"response": []
 				}
 			]
 		},

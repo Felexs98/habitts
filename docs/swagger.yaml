@@ -34,8 +34,12 @@ definitions:
         type: string
       id:
         type: integer
+      level:
+        type: integer
       updated_at:
         type: string
+      xp:
+        type: integer
     type: object
   http.checkInRequest:
     properties:
@@ -93,6 +97,17 @@ definitions:
         type: string
       user:
         $ref: '#/definitions/domain.User'
+    type: object
+  usecase.CheckInResult:
+    properties:
+      check_in:
+        $ref: '#/definitions/domain.CheckIn'
+      level:
+        type: integer
+      total_xp:
+        type: integer
+      xp_awarded:
+        type: integer
     type: object
   usecase.HabitStats:
     properties:
@@ -295,7 +310,7 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/domain.CheckIn'
+            $ref: '#/definitions/usecase.CheckInResult'
       security:
       - BearerAuth: []
       summary: Отметить выполнение привычки
@@ -321,6 +336,28 @@ paths:
       summary: Статистика привычки (streak, всего отметок)
       tags:
       - habits
+  /me:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.User'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http.errorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/http.errorResponse'
+      security:
+      - BearerAuth: []
+      summary: Профиль текущего пользователя
+      tags:
+      - auth
 securityDefinitions:
   BearerAuth:
     description: 'JWT токен. Формат: Bearer &lt;token&gt;'

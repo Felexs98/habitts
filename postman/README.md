@@ -18,7 +18,10 @@ UI: http://localhost:8080/swagger/index.html → **Authorize** → `Bearer <toke
 
 1. **Health** → Health Check  
 2. **Auth** → Register *(или Login, если пользователь уже есть)*  
-3. **Habits** → Create Habit → Check-in (today) → Habit Stats  
+3. **Auth** → Get Me — `xp: 0`, `level: 1`  
+4. **Habits** → Create Habit → Check-in (today) — в ответе `xp_awarded`, `total_xp`, `level`  
+5. **Auth** → Get Me снова — XP вырос  
+6. **Habits** → Habit Stats  
 4. **Check-in Duplicate** — ожидается `409`  
 5. При необходимости → Delete Habit  
 
