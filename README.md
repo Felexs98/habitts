@@ -48,6 +48,10 @@ make test
 
 **Фильтр «на сегодня»:** `GET /api/v1/habits?today=true` — daily + weekly на сегодня, **исключая** уже отмеченные check-in за текущие сутки.
 
+## Архив (soft delete)
+
+`DELETE` помечает `deleted_at` (GORM soft delete). Архив: `GET /habits?archived=true`. Восстановление: `POST /habits/:id/restore`. К архивным нельзя сделать check-in.
+
 ## Геймификация
 
 - При регистрации: `xp = 0`, `level = 1`
@@ -100,8 +104,13 @@ go run ./cmd/api
 | POST | `/api/v1/auth/register` | — |
 | POST | `/api/v1/auth/login` | — |
 | GET | `/api/v1/me` | Bearer JWT (xp, level) |
+| GET | `/api/v1/dashboard` | Сводка: XP, level, today, streaks |
+| GET | `/api/v1/habits/:id/check-ins` | История логов привычки |
 | GET/POST | `/api/v1/habits` | Bearer JWT |
 | GET | `/api/v1/habits?today=true` | Привычки «на сегодня» (не отмеченные) |
+| GET | `/api/v1/habits?archived=true` | Архив (soft delete) |
+| DELETE | `/api/v1/habits/:id` | В архив (не удаляет из БД) |
+| POST | `/api/v1/habits/:id/restore` | Восстановить из архива |
 | GET/PUT/DELETE | `/api/v1/habits/:id` | Bearer JWT |
 | POST | `/api/v1/habits/:id/check-ins` | Bearer JWT |
 | GET | `/api/v1/habits/:id/stats` | Bearer JWT |

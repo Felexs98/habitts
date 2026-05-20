@@ -1,6 +1,14 @@
 basePath: /api/v1
 definitions:
-  domain.Achievement:
+  gorm.DeletedAt:
+    properties:
+      time:
+        type: string
+      valid:
+        description: Valid is true if Time is not NULL
+        type: boolean
+    type: object
+  habit-tracker_internal_domain.Achievement:
     properties:
       code:
         type: string
@@ -11,7 +19,7 @@ definitions:
       title:
         type: string
     type: object
-  domain.CheckIn:
+  habit-tracker_internal_domain.CheckIn:
     properties:
       created_at:
         type: string
@@ -22,7 +30,7 @@ definitions:
       id:
         type: integer
     type: object
-  domain.Frequency:
+  habit-tracker_internal_domain.Frequency:
     enum:
     - daily
     - weekly
@@ -30,16 +38,18 @@ definitions:
     x-enum-varnames:
     - FrequencyDaily
     - FrequencyWeekly
-  domain.Habit:
+  habit-tracker_internal_domain.Habit:
     properties:
       created_at:
         type: string
       current_streak:
         type: integer
+      deleted_at:
+        $ref: '#/definitions/gorm.DeletedAt'
       description:
         type: string
       frequency:
-        $ref: '#/definitions/domain.Frequency'
+        $ref: '#/definitions/habit-tracker_internal_domain.Frequency'
       id:
         type: integer
       max_streak:
@@ -54,7 +64,7 @@ definitions:
         description: 0=Sunday … 6=Saturday, only for weekly
         type: integer
     type: object
-  domain.User:
+  habit-tracker_internal_domain.User:
     properties:
       created_at:
         type: string
@@ -69,13 +79,95 @@ definitions:
       xp:
         type: integer
     type: object
-  http.checkInRequest:
+  habit-tracker_internal_usecase.AuthResult:
+    properties:
+      token:
+        type: string
+      user:
+        $ref: '#/definitions/habit-tracker_internal_domain.User'
+    type: object
+  habit-tracker_internal_usecase.CheckInResult:
+    properties:
+      check_in:
+        $ref: '#/definitions/habit-tracker_internal_domain.CheckIn'
+      current_streak:
+        type: integer
+      level:
+        type: integer
+      max_streak:
+        type: integer
+      new_achievements:
+        items:
+          $ref: '#/definitions/habit-tracker_internal_domain.Achievement'
+        type: array
+      total_xp:
+        type: integer
+      xp_awarded:
+        type: integer
+    type: object
+  habit-tracker_internal_usecase.Dashboard:
+    properties:
+      active_habits:
+        type: integer
+      active_streaks:
+        items:
+          $ref: '#/definitions/habit-tracker_internal_usecase.HabitStreakSummary'
+        type: array
+      best_current_streak:
+        type: integer
+      check_ins_today:
+        type: integer
+      email:
+        type: string
+      habits_due_today:
+        type: integer
+      level:
+        type: integer
+      total_check_ins:
+        type: integer
+      xp:
+        type: integer
+    type: object
+  habit-tracker_internal_usecase.HabitStats:
+    properties:
+      current_streak:
+        type: integer
+      max_streak:
+        type: integer
+      total_check_ins:
+        type: integer
+    type: object
+  habit-tracker_internal_usecase.HabitStreakSummary:
+    properties:
+      current_streak:
+        type: integer
+      habit_id:
+        type: integer
+      max_streak:
+        type: integer
+      title:
+        type: string
+    type: object
+  habit-tracker_internal_usecase.UserAchievementView:
+    properties:
+      code:
+        type: string
+      description:
+        type: string
+      earned:
+        type: boolean
+      earned_at:
+        type: string
+      title:
+        type: string
+    type: object
+  internal_delivery_http.checkInRequest:
     properties:
       date:
         description: 'YYYY-MM-DD, optional (default: today)'
         type: string
     type: object
-  http.createHabitRequest:
+  internal_delivery_http.createHabitRequest:
     properties:
       description:
         type: string
@@ -94,12 +186,12 @@ definitions:
     required:
     - title
     type: object
-  http.errorResponse:
+  internal_delivery_http.errorResponse:
     properties:
       error:
         type: string
     type: object
-  http.loginRequest:
+  internal_delivery_http.loginRequest:
     properties:
       email:
         type: string
@@ -109,7 +201,7 @@ definitions:
     - email
     - password
     type: object
-  http.registerRequest:
+  internal_delivery_http.registerRequest:
     properties:
       email:
         type: string
@@ -120,7 +212,7 @@ definitions:
     - email
     - password
     type: object
-  http.updateHabitRequest:
+  internal_delivery_http.updateHabitRequest:
     properties:
       description:
         type: string
@@ -135,54 +227,6 @@ definitions:
         type: integer
     required:
     - title
-    type: object
-  usecase.AuthResult:
-    properties:
-      token:
-        type: string
-      user:
-        $ref: '#/definitions/domain.User'
-    type: object
-  usecase.CheckInResult:
-    properties:
-      check_in:
-        $ref: '#/definitions/domain.CheckIn'
-      current_streak:
-        type: integer
-      level:
-        type: integer
-      max_streak:
-        type: integer
-      new_achievements:
-        items:
-          $ref: '#/definitions/domain.Achievement'
-        type: array
-      total_xp:
-        type: integer
-      xp_awarded:
-        type: integer
-    type: object
-  usecase.HabitStats:
-    properties:
-      current_streak:
-        type: integer
-      max_streak:
-        type: integer
-      total_check_ins:
-        type: integer
-    type: object
-  usecase.UserAchievementView:
-    properties:
-      code:
-        type: string
-      description:
-        type: string
-      earned:
-        type: boolean
-      earned_at:
-        type: string
-      title:
-        type: string
     type: object
 host: localhost:8080
 info:
@@ -200,12 +244,12 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/usecase.UserAchievementView'
+              $ref: '#/definitions/habit-tracker_internal_usecase.UserAchievementView'
             type: array
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/http.errorResponse'
+            $ref: '#/definitions/internal_delivery_http.errorResponse'
       security:
       - BearerAuth: []
       summary: Достижения пользователя
@@ -221,18 +265,18 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/http.loginRequest'
+          $ref: '#/definitions/internal_delivery_http.loginRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/usecase.AuthResult'
+            $ref: '#/definitions/habit-tracker_internal_usecase.AuthResult'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/http.errorResponse'
+            $ref: '#/definitions/internal_delivery_http.errorResponse'
       summary: Вход пользователя
       tags:
       - auth
@@ -246,33 +290,57 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/http.registerRequest'
+          $ref: '#/definitions/internal_delivery_http.registerRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/usecase.AuthResult'
+            $ref: '#/definitions/habit-tracker_internal_usecase.AuthResult'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/http.errorResponse'
+            $ref: '#/definitions/internal_delivery_http.errorResponse'
         "409":
           description: Conflict
           schema:
-            $ref: '#/definitions/http.errorResponse'
+            $ref: '#/definitions/internal_delivery_http.errorResponse'
       summary: Регистрация пользователя
       tags:
       - auth
+  /dashboard:
+    get:
+      description: XP, уровень, привычки на сегодня, отметки за сегодня, активные
+        streak.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/habit-tracker_internal_usecase.Dashboard'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_delivery_http.errorResponse'
+      security:
+      - BearerAuth: []
+      summary: Дашборд пользователя (аналитика)
+      tags:
+      - dashboard
   /habits:
     get:
-      description: Без параметров — все привычки. `today=true` — только те, что нужно
-        выполнить сегодня и ещё не отмечены.
+      description: Активные привычки (по умолчанию). `today=true` — на сегодня, не
+        отмеченные. `archived=true` — архив (soft delete).
       parameters:
       - description: Фильтр «на сегодня»
         in: query
         name: today
+        type: boolean
+      - description: Только архивные
+        in: query
+        name: archived
         type: boolean
       produces:
       - application/json
@@ -281,12 +349,12 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/domain.Habit'
+              $ref: '#/definitions/habit-tracker_internal_domain.Habit'
             type: array
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/http.errorResponse'
+            $ref: '#/definitions/internal_delivery_http.errorResponse'
       security:
       - BearerAuth: []
       summary: Список привычек пользователя
@@ -301,18 +369,18 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/http.createHabitRequest'
+          $ref: '#/definitions/internal_delivery_http.createHabitRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/domain.Habit'
+            $ref: '#/definitions/habit-tracker_internal_domain.Habit'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/http.errorResponse'
+            $ref: '#/definitions/internal_delivery_http.errorResponse'
       security:
       - BearerAuth: []
       summary: Создать привычку
@@ -331,7 +399,7 @@ paths:
           description: No Content
       security:
       - BearerAuth: []
-      summary: Удалить привычку
+      summary: Архивировать привычку (soft delete)
       tags:
       - habits
     get:
@@ -347,11 +415,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/domain.Habit'
+            $ref: '#/definitions/habit-tracker_internal_domain.Habit'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/http.errorResponse'
+            $ref: '#/definitions/internal_delivery_http.errorResponse'
       security:
       - BearerAuth: []
       summary: Получить привычку по ID
@@ -371,20 +439,45 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/http.updateHabitRequest'
+          $ref: '#/definitions/internal_delivery_http.updateHabitRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/domain.Habit'
+            $ref: '#/definitions/habit-tracker_internal_domain.Habit'
       security:
       - BearerAuth: []
       summary: Обновить привычку
       tags:
       - habits
   /habits/{id}/check-ins:
+    get:
+      parameters:
+      - description: Habit ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/habit-tracker_internal_domain.CheckIn'
+            type: array
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_delivery_http.errorResponse'
+      security:
+      - BearerAuth: []
+      summary: История отметок привычки
+      tags:
+      - habits
     post:
       consumes:
       - application/json
@@ -398,17 +491,39 @@ paths:
         in: body
         name: body
         schema:
-          $ref: '#/definitions/http.checkInRequest'
+          $ref: '#/definitions/internal_delivery_http.checkInRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/usecase.CheckInResult'
+            $ref: '#/definitions/habit-tracker_internal_usecase.CheckInResult'
       security:
       - BearerAuth: []
       summary: Отметить выполнение привычки
+      tags:
+      - habits
+  /habits/{id}/restore:
+    post:
+      parameters:
+      - description: Habit ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/habit-tracker_internal_domain.Habit'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_delivery_http.errorResponse'
+      security:
+      - BearerAuth: []
+      summary: Восстановить привычку из архива
       tags:
       - habits
   /habits/{id}/stats:
@@ -425,7 +540,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/usecase.HabitStats'
+            $ref: '#/definitions/habit-tracker_internal_usecase.HabitStats'
       security:
       - BearerAuth: []
       summary: Статистика привычки (streak, всего отметок)
@@ -439,15 +554,15 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/domain.User'
+            $ref: '#/definitions/habit-tracker_internal_domain.User'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/http.errorResponse'
+            $ref: '#/definitions/internal_delivery_http.errorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/http.errorResponse'
+            $ref: '#/definitions/internal_delivery_http.errorResponse'
       security:
       - BearerAuth: []
       summary: Профиль текущего пользователя

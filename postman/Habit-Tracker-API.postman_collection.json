@@ -156,6 +156,24 @@
 					"response": []
 				},
 				{
+					"name": "Dashboard",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [{"key": "token", "value": "{{token}}", "type": "string"}]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}{{apiPrefix}}/dashboard",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "dashboard"]
+						},
+						"description": "XP, level, habits_due_today, check_ins_today, active_streaks."
+					},
+					"response": []
+				},
+				{
 					"name": "Get Achievements",
 					"request": {
 						"auth": {
@@ -298,6 +316,20 @@
 					"response": []
 				},
 				{
+					"name": "List Check-ins (history)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}{{apiPrefix}}/habits/{{habitId}}/check-ins",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "habits", "{{habitId}}", "check-ins"]
+						},
+						"description": "История логов выполнения привычки."
+					},
+					"response": []
+				},
+				{
 					"name": "Check-in (today)",
 					"request": {
 						"method": "POST",
@@ -412,7 +444,22 @@
 					"response": []
 				},
 				{
-					"name": "Delete Habit",
+					"name": "List Habits (archived)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}{{apiPrefix}}/habits?archived=true",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "habits"],
+							"query": [{"key": "archived", "value": "true"}]
+						},
+						"description": "Архивные привычки (soft delete)."
+					},
+					"response": []
+				},
+				{
+					"name": "Archive Habit (soft delete)",
 					"request": {
 						"method": "DELETE",
 						"header": [],
@@ -421,7 +468,20 @@
 							"host": ["{{baseUrl}}"],
 							"path": ["api", "v1", "habits", "{{habitId}}"]
 						},
-						"description": "204 No Content. Запускайте в конце сценария."
+						"description": "204 — привычка в архиве, не удаляется из БД."
+					},
+					"response": []
+				},
+				{
+					"name": "Restore Habit",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}{{apiPrefix}}/habits/{{habitId}}/restore",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "habits", "{{habitId}}", "restore"]
+						}
 					},
 					"response": []
 				}

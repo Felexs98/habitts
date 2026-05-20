@@ -35,14 +35,14 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/usecase.UserAchievementView"
+                                "$ref": "#/definitions/habit-tracker_internal_usecase.UserAchievementView"
                             }
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/http.errorResponse"
+                            "$ref": "#/definitions/internal_delivery_http.errorResponse"
                         }
                     }
                 }
@@ -67,7 +67,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/http.loginRequest"
+                            "$ref": "#/definitions/internal_delivery_http.loginRequest"
                         }
                     }
                 ],
@@ -75,13 +75,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/usecase.AuthResult"
+                            "$ref": "#/definitions/habit-tracker_internal_usecase.AuthResult"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/http.errorResponse"
+                            "$ref": "#/definitions/internal_delivery_http.errorResponse"
                         }
                     }
                 }
@@ -106,7 +106,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/http.registerRequest"
+                            "$ref": "#/definitions/internal_delivery_http.registerRequest"
                         }
                     }
                 ],
@@ -114,19 +114,50 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/usecase.AuthResult"
+                            "$ref": "#/definitions/habit-tracker_internal_usecase.AuthResult"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/http.errorResponse"
+                            "$ref": "#/definitions/internal_delivery_http.errorResponse"
                         }
                     },
                     "409": {
                         "description": "Conflict",
                         "schema": {
-                            "$ref": "#/definitions/http.errorResponse"
+                            "$ref": "#/definitions/internal_delivery_http.errorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/dashboard": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "XP, уровень, привычки на сегодня, отметки за сегодня, активные streak.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "dashboard"
+                ],
+                "summary": "Дашборд пользователя (аналитика)",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/habit-tracker_internal_usecase.Dashboard"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_delivery_http.errorResponse"
                         }
                     }
                 }
@@ -139,7 +170,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Без параметров — все привычки. ` + "`" + `today=true` + "`" + ` — только те, что нужно выполнить сегодня и ещё не отмечены.",
+                "description": "Активные привычки (по умолчанию). ` + "`" + `today=true` + "`" + ` — на сегодня, не отмеченные. ` + "`" + `archived=true` + "`" + ` — архив (soft delete).",
                 "produces": [
                     "application/json"
                 ],
@@ -153,6 +184,12 @@ const docTemplate = `{
                         "description": "Фильтр «на сегодня»",
                         "name": "today",
                         "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Только архивные",
+                        "name": "archived",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -161,14 +198,14 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/domain.Habit"
+                                "$ref": "#/definitions/habit-tracker_internal_domain.Habit"
                             }
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/http.errorResponse"
+                            "$ref": "#/definitions/internal_delivery_http.errorResponse"
                         }
                     }
                 }
@@ -196,7 +233,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/http.createHabitRequest"
+                            "$ref": "#/definitions/internal_delivery_http.createHabitRequest"
                         }
                     }
                 ],
@@ -204,13 +241,13 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/domain.Habit"
+                            "$ref": "#/definitions/habit-tracker_internal_domain.Habit"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/http.errorResponse"
+                            "$ref": "#/definitions/internal_delivery_http.errorResponse"
                         }
                     }
                 }
@@ -243,13 +280,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/domain.Habit"
+                            "$ref": "#/definitions/habit-tracker_internal_domain.Habit"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/http.errorResponse"
+                            "$ref": "#/definitions/internal_delivery_http.errorResponse"
                         }
                     }
                 }
@@ -284,7 +321,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/http.updateHabitRequest"
+                            "$ref": "#/definitions/internal_delivery_http.updateHabitRequest"
                         }
                     }
                 ],
@@ -292,7 +329,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/domain.Habit"
+                            "$ref": "#/definitions/habit-tracker_internal_domain.Habit"
                         }
                     }
                 }
@@ -306,7 +343,7 @@ const docTemplate = `{
                 "tags": [
                     "habits"
                 ],
-                "summary": "Удалить привычку",
+                "summary": "Архивировать привычку (soft delete)",
                 "parameters": [
                     {
                         "type": "integer",
@@ -324,6 +361,46 @@ const docTemplate = `{
             }
         },
         "/habits/{id}/check-ins": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "habits"
+                ],
+                "summary": "История отметок привычки",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Habit ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/habit-tracker_internal_domain.CheckIn"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/internal_delivery_http.errorResponse"
+                        }
+                    }
+                }
+            },
             "post": {
                 "security": [
                     {
@@ -353,7 +430,7 @@ const docTemplate = `{
                         "name": "body",
                         "in": "body",
                         "schema": {
-                            "$ref": "#/definitions/http.checkInRequest"
+                            "$ref": "#/definitions/internal_delivery_http.checkInRequest"
                         }
                     }
                 ],
@@ -361,7 +438,43 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/usecase.CheckInResult"
+                            "$ref": "#/definitions/habit-tracker_internal_usecase.CheckInResult"
+                        }
+                    }
+                }
+            }
+        },
+        "/habits/{id}/restore": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "habits"
+                ],
+                "summary": "Восстановить привычку из архива",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Habit ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/habit-tracker_internal_domain.Habit"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/internal_delivery_http.errorResponse"
                         }
                     }
                 }
@@ -394,7 +507,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/usecase.HabitStats"
+                            "$ref": "#/definitions/habit-tracker_internal_usecase.HabitStats"
                         }
                     }
                 }
@@ -418,19 +531,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/domain.User"
+                            "$ref": "#/definitions/habit-tracker_internal_domain.User"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/http.errorResponse"
+                            "$ref": "#/definitions/internal_delivery_http.errorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/http.errorResponse"
+                            "$ref": "#/definitions/internal_delivery_http.errorResponse"
                         }
                     }
                 }
@@ -438,7 +551,19 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "domain.Achievement": {
+        "gorm.DeletedAt": {
+            "type": "object",
+            "properties": {
+                "time": {
+                    "type": "string"
+                },
+                "valid": {
+                    "description": "Valid is true if Time is not NULL",
+                    "type": "boolean"
+                }
+            }
+        },
+        "habit-tracker_internal_domain.Achievement": {
             "type": "object",
             "properties": {
                 "code": {
@@ -455,7 +580,7 @@ const docTemplate = `{
                 }
             }
         },
-        "domain.CheckIn": {
+        "habit-tracker_internal_domain.CheckIn": {
             "type": "object",
             "properties": {
                 "created_at": {
@@ -472,7 +597,7 @@ const docTemplate = `{
                 }
             }
         },
-        "domain.Frequency": {
+        "habit-tracker_internal_domain.Frequency": {
             "type": "string",
             "enum": [
                 "daily",
@@ -483,7 +608,7 @@ const docTemplate = `{
                 "FrequencyWeekly"
             ]
         },
-        "domain.Habit": {
+        "habit-tracker_internal_domain.Habit": {
             "type": "object",
             "properties": {
                 "created_at": {
@@ -492,11 +617,14 @@ const docTemplate = `{
                 "current_streak": {
                     "type": "integer"
                 },
+                "deleted_at": {
+                    "$ref": "#/definitions/gorm.DeletedAt"
+                },
                 "description": {
                     "type": "string"
                 },
                 "frequency": {
-                    "$ref": "#/definitions/domain.Frequency"
+                    "$ref": "#/definitions/habit-tracker_internal_domain.Frequency"
                 },
                 "id": {
                     "type": "integer"
@@ -519,7 +647,7 @@ const docTemplate = `{
                 }
             }
         },
-        "domain.User": {
+        "habit-tracker_internal_domain.User": {
             "type": "object",
             "properties": {
                 "created_at": {
@@ -542,7 +670,133 @@ const docTemplate = `{
                 }
             }
         },
-        "http.checkInRequest": {
+        "habit-tracker_internal_usecase.AuthResult": {
+            "type": "object",
+            "properties": {
+                "token": {
+                    "type": "string"
+                },
+                "user": {
+                    "$ref": "#/definitions/habit-tracker_internal_domain.User"
+                }
+            }
+        },
+        "habit-tracker_internal_usecase.CheckInResult": {
+            "type": "object",
+            "properties": {
+                "check_in": {
+                    "$ref": "#/definitions/habit-tracker_internal_domain.CheckIn"
+                },
+                "current_streak": {
+                    "type": "integer"
+                },
+                "level": {
+                    "type": "integer"
+                },
+                "max_streak": {
+                    "type": "integer"
+                },
+                "new_achievements": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/habit-tracker_internal_domain.Achievement"
+                    }
+                },
+                "total_xp": {
+                    "type": "integer"
+                },
+                "xp_awarded": {
+                    "type": "integer"
+                }
+            }
+        },
+        "habit-tracker_internal_usecase.Dashboard": {
+            "type": "object",
+            "properties": {
+                "active_habits": {
+                    "type": "integer"
+                },
+                "active_streaks": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/habit-tracker_internal_usecase.HabitStreakSummary"
+                    }
+                },
+                "best_current_streak": {
+                    "type": "integer"
+                },
+                "check_ins_today": {
+                    "type": "integer"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "habits_due_today": {
+                    "type": "integer"
+                },
+                "level": {
+                    "type": "integer"
+                },
+                "total_check_ins": {
+                    "type": "integer"
+                },
+                "xp": {
+                    "type": "integer"
+                }
+            }
+        },
+        "habit-tracker_internal_usecase.HabitStats": {
+            "type": "object",
+            "properties": {
+                "current_streak": {
+                    "type": "integer"
+                },
+                "max_streak": {
+                    "type": "integer"
+                },
+                "total_check_ins": {
+                    "type": "integer"
+                }
+            }
+        },
+        "habit-tracker_internal_usecase.HabitStreakSummary": {
+            "type": "object",
+            "properties": {
+                "current_streak": {
+                    "type": "integer"
+                },
+                "habit_id": {
+                    "type": "integer"
+                },
+                "max_streak": {
+                    "type": "integer"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "habit-tracker_internal_usecase.UserAchievementView": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "earned": {
+                    "type": "boolean"
+                },
+                "earned_at": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_delivery_http.checkInRequest": {
             "type": "object",
             "properties": {
                 "date": {
@@ -551,7 +805,7 @@ const docTemplate = `{
                 }
             }
         },
-        "http.createHabitRequest": {
+        "internal_delivery_http.createHabitRequest": {
             "type": "object",
             "required": [
                 "title"
@@ -578,7 +832,7 @@ const docTemplate = `{
                 }
             }
         },
-        "http.errorResponse": {
+        "internal_delivery_http.errorResponse": {
             "type": "object",
             "properties": {
                 "error": {
@@ -586,7 +840,7 @@ const docTemplate = `{
                 }
             }
         },
-        "http.loginRequest": {
+        "internal_delivery_http.loginRequest": {
             "type": "object",
             "required": [
                 "email",
@@ -601,7 +855,7 @@ const docTemplate = `{
                 }
             }
         },
-        "http.registerRequest": {
+        "internal_delivery_http.registerRequest": {
             "type": "object",
             "required": [
                 "email",
@@ -617,7 +871,7 @@ const docTemplate = `{
                 }
             }
         },
-        "http.updateHabitRequest": {
+        "internal_delivery_http.updateHabitRequest": {
             "type": "object",
             "required": [
                 "title"
@@ -638,80 +892,6 @@ const docTemplate = `{
                 },
                 "weekday": {
                     "type": "integer"
-                }
-            }
-        },
-        "usecase.AuthResult": {
-            "type": "object",
-            "properties": {
-                "token": {
-                    "type": "string"
-                },
-                "user": {
-                    "$ref": "#/definitions/domain.User"
-                }
-            }
-        },
-        "usecase.CheckInResult": {
-            "type": "object",
-            "properties": {
-                "check_in": {
-                    "$ref": "#/definitions/domain.CheckIn"
-                },
-                "current_streak": {
-                    "type": "integer"
-                },
-                "level": {
-                    "type": "integer"
-                },
-                "max_streak": {
-                    "type": "integer"
-                },
-                "new_achievements": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/domain.Achievement"
-                    }
-                },
-                "total_xp": {
-                    "type": "integer"
-                },
-                "xp_awarded": {
-                    "type": "integer"
-                }
-            }
-        },
-        "usecase.HabitStats": {
-            "type": "object",
-            "properties": {
-                "current_streak": {
-                    "type": "integer"
-                },
-                "max_streak": {
-                    "type": "integer"
-                },
-                "total_check_ins": {
-                    "type": "integer"
-                }
-            }
-        },
-        "usecase.UserAchievementView": {
-            "type": "object",
-            "properties": {
-                "code": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "earned": {
-                    "type": "boolean"
-                },
-                "earned_at": {
-                    "type": "string"
-                },
-                "title": {
-                    "type": "string"
                 }
             }
         }

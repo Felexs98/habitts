@@ -17,13 +17,18 @@ UI: http://localhost:8080/swagger/index.html → **Authorize** → `Bearer <toke
 ## Порядок запросов
 
 1. **Health** → Health Check  
-2. **Auth** → Register *(или Login, если пользователь уже есть)*  
-3. **Auth** → Get Me — `xp: 0`, `level: 1`  
-4. **Habits** → Create Habit → Check-in (today) — в ответе `xp_awarded`, `total_xp`, `level`  
-5. **Auth** → Get Me снова — XP вырос  
-6. **Habits** → Habit Stats  
-4. **Check-in Duplicate** — ожидается `409`  
-5. При необходимости → Delete Habit  
+2. **Auth** → Register *(или Login)*  
+3. **Auth** → Get Me  
+4. **Auth** → Dashboard — сводка XP, today, streaks  
+5. **Habits** → Create Habit → List Check-ins (history) → Check-in (today) → Habit Stats  
+5. **Check-in Duplicate** — ожидается `409`  
+
+### Архив (soft delete)
+
+6. **Archive Habit (soft delete)** — `DELETE`, 204  
+7. **List Habits** — активных нет  
+8. **List Habits (archived)** — `?archived=true`, видна привычка с `deleted_at`  
+9. **Restore Habit** — `POST .../habits/{{habitId}}/restore`, снова в активных  
 
 После **Register** / **Login** в environment подставляется `token`.  
 После **Create Habit** — `habitId`.
