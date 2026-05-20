@@ -15,6 +15,39 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/achievements": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "achievements"
+                ],
+                "summary": "Достижения пользователя",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/usecase.UserAchievementView"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/http.errorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/auth/login": {
             "post": {
                 "consumes": [
@@ -405,6 +438,23 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "domain.Achievement": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
         "domain.CheckIn": {
             "type": "object",
             "properties": {
@@ -439,6 +489,9 @@ const docTemplate = `{
                 "created_at": {
                     "type": "string"
                 },
+                "current_streak": {
+                    "type": "integer"
+                },
                 "description": {
                     "type": "string"
                 },
@@ -446,6 +499,9 @@ const docTemplate = `{
                     "$ref": "#/definitions/domain.Frequency"
                 },
                 "id": {
+                    "type": "integer"
+                },
+                "max_streak": {
                     "type": "integer"
                 },
                 "title": {
@@ -602,8 +658,20 @@ const docTemplate = `{
                 "check_in": {
                     "$ref": "#/definitions/domain.CheckIn"
                 },
+                "current_streak": {
+                    "type": "integer"
+                },
                 "level": {
                     "type": "integer"
+                },
+                "max_streak": {
+                    "type": "integer"
+                },
+                "new_achievements": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/domain.Achievement"
+                    }
                 },
                 "total_xp": {
                     "type": "integer"
@@ -619,8 +687,31 @@ const docTemplate = `{
                 "current_streak": {
                     "type": "integer"
                 },
+                "max_streak": {
+                    "type": "integer"
+                },
                 "total_check_ins": {
                     "type": "integer"
+                }
+            }
+        },
+        "usecase.UserAchievementView": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "earned": {
+                    "type": "boolean"
+                },
+                "earned_at": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
                 }
             }
         }

@@ -54,7 +54,9 @@ make test
 - Каждый check-in: **+10 XP**
 - Уровень: `level = xp / 100 + 1` (каждые 100 XP — новый уровень)
 - `GET /api/v1/me` — профиль с прогрессом
-- Ответ check-in включает `xp_awarded`, `total_xp`, `level`
+- Ответ check-in включает `xp_awarded`, `total_xp`, `level`, `current_streak`, `max_streak`, `new_achievements`
+- У привычки в БД: `current_streak`, `max_streak` (обновляются при check-in)
+- `GET /api/v1/achievements` — список достижений (в т.ч. «Неделя без перерывов» при `max_streak >= 7`)
 
 ## Postman
 

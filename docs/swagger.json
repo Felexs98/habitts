@@ -9,6 +9,39 @@
     "host": "localhost:8080",
     "basePath": "/api/v1",
     "paths": {
+        "/achievements": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "achievements"
+                ],
+                "summary": "Достижения пользователя",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/usecase.UserAchievementView"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/http.errorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/auth/login": {
             "post": {
                 "consumes": [
@@ -399,6 +432,23 @@
         }
     },
     "definitions": {
+        "domain.Achievement": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
         "domain.CheckIn": {
             "type": "object",
             "properties": {
@@ -433,6 +483,9 @@
                 "created_at": {
                     "type": "string"
                 },
+                "current_streak": {
+                    "type": "integer"
+                },
                 "description": {
                     "type": "string"
                 },
@@ -440,6 +493,9 @@
                     "$ref": "#/definitions/domain.Frequency"
                 },
                 "id": {
+                    "type": "integer"
+                },
+                "max_streak": {
                     "type": "integer"
                 },
                 "title": {
@@ -596,8 +652,20 @@
                 "check_in": {
                     "$ref": "#/definitions/domain.CheckIn"
                 },
+                "current_streak": {
+                    "type": "integer"
+                },
                 "level": {
                     "type": "integer"
+                },
+                "max_streak": {
+                    "type": "integer"
+                },
+                "new_achievements": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/domain.Achievement"
+                    }
                 },
                 "total_xp": {
                     "type": "integer"
@@ -613,8 +681,31 @@
                 "current_streak": {
                     "type": "integer"
                 },
+                "max_streak": {
+                    "type": "integer"
+                },
                 "total_check_ins": {
                     "type": "integer"
+                }
+            }
+        },
+        "usecase.UserAchievementView": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "earned": {
+                    "type": "boolean"
+                },
+                "earned_at": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
                 }
             }
         }

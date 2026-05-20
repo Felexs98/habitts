@@ -1,5 +1,16 @@
 basePath: /api/v1
 definitions:
+  domain.Achievement:
+    properties:
+      code:
+        type: string
+      description:
+        type: string
+      id:
+        type: integer
+      title:
+        type: string
+    type: object
   domain.CheckIn:
     properties:
       created_at:
@@ -23,11 +34,15 @@ definitions:
     properties:
       created_at:
         type: string
+      current_streak:
+        type: integer
       description:
         type: string
       frequency:
         $ref: '#/definitions/domain.Frequency'
       id:
+        type: integer
+      max_streak:
         type: integer
       title:
         type: string
@@ -132,8 +147,16 @@ definitions:
     properties:
       check_in:
         $ref: '#/definitions/domain.CheckIn'
+      current_streak:
+        type: integer
       level:
         type: integer
+      max_streak:
+        type: integer
+      new_achievements:
+        items:
+          $ref: '#/definitions/domain.Achievement'
+        type: array
       total_xp:
         type: integer
       xp_awarded:
@@ -143,8 +166,23 @@ definitions:
     properties:
       current_streak:
         type: integer
+      max_streak:
+        type: integer
       total_check_ins:
         type: integer
+    type: object
+  usecase.UserAchievementView:
+    properties:
+      code:
+        type: string
+      description:
+        type: string
+      earned:
+        type: boolean
+      earned_at:
+        type: string
+      title:
+        type: string
     type: object
 host: localhost:8080
 info:
@@ -153,6 +191,26 @@ info:
   title: Habit Tracker API
   version: "1.0"
 paths:
+  /achievements:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/usecase.UserAchievementView'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http.errorResponse'
+      security:
+      - BearerAuth: []
+      summary: Достижения пользователя
+      tags:
+      - achievements
   /auth/login:
     post:
       consumes:

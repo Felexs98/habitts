@@ -154,6 +154,23 @@
 						"description": "Профиль: email, xp, level. Нужен JWT."
 					},
 					"response": []
+				},
+				{
+					"name": "Get Achievements",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [{"key": "token", "value": "{{token}}", "type": "string"}]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}{{apiPrefix}}/achievements",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "achievements"]
+						}
+					},
+					"response": []
 				}
 			]
 		},
