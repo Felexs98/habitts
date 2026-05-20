@@ -1,10 +1,13 @@
-.PHONY: run build swagger docker-up docker-down tidy
+.PHONY: run build test swagger docker-up docker-down tidy
 
 run:
 	go run ./cmd/api
 
 build:
 	go build -o bin/api ./cmd/api
+
+test:
+	go test ./... -v
 
 tidy:
 	go mod tidy

@@ -27,6 +27,16 @@ pkg/
 docs/                 — Swagger (генерируется swag)
 ```
 
+## Тесты
+
+```bash
+go test ./... -v
+# или
+make test
+```
+
+Покрыты `internal/domain` (уровень от XP) и `internal/usecase` (auth, check-in, streak) с моками репозиториев.
+
 ## Геймификация
 
 - При регистрации: `xp = 0`, `level = 1`
