@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"habit-tracker/internal/domain"
+	"habit-tracker/internal/middleware"
 	"habit-tracker/internal/usecase"
 
 	"github.com/gin-gonic/gin"
@@ -73,6 +74,31 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, result)
+}
+
+// Me godoc
+// @Summary      Профиль текущего пользователя
+// @Tags         auth
+// @Security     BearerAuth
+// @Produce      json
+// @Success      200  {object}  domain.User
+// @Failure      401  {object}  errorResponse
+// @Failure      404  {object}  errorResponse
+// @Router       /me [get]
+func (h *AuthHandler) Me(c *gin.Context) {
+	userID, ok := middleware.GetUserID(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, errorResponse{Error: "unauthorized"})
+		return
+	}
+
+	user, err := h.auth.GetMe(c.Request.Context(), userID)
+	if err != nil {
+		writeError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, user)
 }
 
 func writeError(c *gin.Context, err error) {

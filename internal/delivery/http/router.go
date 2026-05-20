@@ -36,6 +36,7 @@ func NewRouter(h *Handlers, jwtManager *jwtutil.Manager) *gin.Engine {
 	protected := api.Group("")
 	protected.Use(middleware.JWT(jwtManager))
 	{
+		protected.GET("/me", h.Auth.Me)
 		protected.GET("/habits", h.Habit.List)
 		protected.POST("/habits", h.Habit.Create)
 		protected.GET("/habits/:id", h.Habit.Get)
