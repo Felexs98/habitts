@@ -179,7 +179,28 @@
 							"raw": "{{baseUrl}}{{apiPrefix}}/habits",
 							"host": ["{{baseUrl}}"],
 							"path": ["api", "v1", "habits"]
-						}
+						},
+						"description": "Все привычки пользователя."
+					},
+					"response": []
+				},
+				{
+					"name": "List Habits (today)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}{{apiPrefix}}/habits?today=true",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "habits"],
+							"query": [
+								{
+									"key": "today",
+									"value": "true"
+								}
+							]
+						},
+						"description": "Привычки на сегодня: daily всегда; weekly — в свой день недели; без уже выполненных сегодня check-in."
 					},
 					"response": []
 				},
@@ -214,7 +235,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"title\": \"Читать 30 минут\",\n  \"description\": \"Каждый день перед сном\"\n}"
+							"raw": "{\n  \"title\": \"Читать 30 минут\",\n  \"description\": \"Каждый день перед сном\",\n  \"frequency\": \"daily\"\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}{{apiPrefix}}/habits",

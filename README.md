@@ -37,6 +37,17 @@ make test
 
 Покрыты `internal/domain` (уровень от XP) и `internal/usecase` (auth, check-in, streak) с моками репозиториев.
 
+## Периодичность привычек
+
+| `frequency` | Поведение |
+|-------------|-----------|
+| `daily` | Нужно выполнять каждый день |
+| `weekly` | Нужно выполнять в выбранный день недели (`weekday`: 0=вс … 6=сб) |
+
+При создании `weekly` без `weekday` подставляется текущий день недели.
+
+**Фильтр «на сегодня»:** `GET /api/v1/habits?today=true` — daily + weekly на сегодня, **исключая** уже отмеченные check-in за текущие сутки.
+
 ## Геймификация
 
 - При регистрации: `xp = 0`, `level = 1`
@@ -88,6 +99,7 @@ go run ./cmd/api
 | POST | `/api/v1/auth/login` | — |
 | GET | `/api/v1/me` | Bearer JWT (xp, level) |
 | GET/POST | `/api/v1/habits` | Bearer JWT |
+| GET | `/api/v1/habits?today=true` | Привычки «на сегодня» (не отмеченные) |
 | GET/PUT/DELETE | `/api/v1/habits/:id` | Bearer JWT |
 | POST | `/api/v1/habits/:id/check-ins` | Bearer JWT |
 | GET | `/api/v1/habits/:id/stats` | Bearer JWT |

@@ -11,12 +11,22 @@ definitions:
       id:
         type: integer
     type: object
+  domain.Frequency:
+    enum:
+    - daily
+    - weekly
+    type: string
+    x-enum-varnames:
+    - FrequencyDaily
+    - FrequencyWeekly
   domain.Habit:
     properties:
       created_at:
         type: string
       description:
         type: string
+      frequency:
+        $ref: '#/definitions/domain.Frequency'
       id:
         type: integer
       title:
@@ -24,6 +34,9 @@ definitions:
       updated_at:
         type: string
       user_id:
+        type: integer
+      weekday:
+        description: 0=Sunday … 6=Saturday, only for weekly
         type: integer
     type: object
   domain.User:
@@ -51,8 +64,18 @@ definitions:
     properties:
       description:
         type: string
+      frequency:
+        enum:
+        - daily
+        - weekly
+        example: daily
+        type: string
       title:
         type: string
+      weekday:
+        description: 0=Вс … 6=Сб, для weekly
+        example: 1
+        type: integer
     required:
     - title
     type: object
@@ -86,8 +109,15 @@ definitions:
     properties:
       description:
         type: string
+      frequency:
+        enum:
+        - daily
+        - weekly
+        type: string
       title:
         type: string
+      weekday:
+        type: integer
     required:
     - title
     type: object
@@ -179,6 +209,13 @@ paths:
       - auth
   /habits:
     get:
+      description: Без параметров — все привычки. `today=true` — только те, что нужно
+        выполнить сегодня и ещё не отмечены.
+      parameters:
+      - description: Фильтр «на сегодня»
+        in: query
+        name: today
+        type: boolean
       produces:
       - application/json
       responses:

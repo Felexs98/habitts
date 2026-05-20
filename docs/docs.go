@@ -106,6 +106,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
+                "description": "Без параметров — все привычки. ` + "`" + `today=true` + "`" + ` — только те, что нужно выполнить сегодня и ещё не отмечены.",
                 "produces": [
                     "application/json"
                 ],
@@ -113,6 +114,14 @@ const docTemplate = `{
                     "habits"
                 ],
                 "summary": "Список привычек пользователя",
+                "parameters": [
+                    {
+                        "type": "boolean",
+                        "description": "Фильтр «на сегодня»",
+                        "name": "today",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -413,6 +422,17 @@ const docTemplate = `{
                 }
             }
         },
+        "domain.Frequency": {
+            "type": "string",
+            "enum": [
+                "daily",
+                "weekly"
+            ],
+            "x-enum-varnames": [
+                "FrequencyDaily",
+                "FrequencyWeekly"
+            ]
+        },
         "domain.Habit": {
             "type": "object",
             "properties": {
@@ -421,6 +441,9 @@ const docTemplate = `{
                 },
                 "description": {
                     "type": "string"
+                },
+                "frequency": {
+                    "$ref": "#/definitions/domain.Frequency"
                 },
                 "id": {
                     "type": "integer"
@@ -432,6 +455,10 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "user_id": {
+                    "type": "integer"
+                },
+                "weekday": {
+                    "description": "0=Sunday … 6=Saturday, only for weekly",
                     "type": "integer"
                 }
             }
@@ -477,8 +504,21 @@ const docTemplate = `{
                 "description": {
                     "type": "string"
                 },
+                "frequency": {
+                    "type": "string",
+                    "enum": [
+                        "daily",
+                        "weekly"
+                    ],
+                    "example": "daily"
+                },
                 "title": {
                     "type": "string"
+                },
+                "weekday": {
+                    "description": "0=Вс … 6=Сб, для weekly",
+                    "type": "integer",
+                    "example": 1
                 }
             }
         },
@@ -530,8 +570,18 @@ const docTemplate = `{
                 "description": {
                     "type": "string"
                 },
+                "frequency": {
+                    "type": "string",
+                    "enum": [
+                        "daily",
+                        "weekly"
+                    ]
+                },
                 "title": {
                     "type": "string"
+                },
+                "weekday": {
+                    "type": "integer"
                 }
             }
         },
