@@ -67,13 +67,27 @@ func (r *checkInRepo) Apply(ctx context.Context, apply *domain.CheckInApply) err
 	})
 }
 
-func (r *checkInRepo) ListByHabitID(ctx context.Context, habitID uint) ([]domain.CheckIn, error) {
+func (r *checkInRepo) ListByHabitID(ctx context.Context, habitID uint, from, to *time.Time) ([]domain.CheckIn, error) {
 	var list []domain.CheckIn
-	err := r.db.WithContext(ctx).
-		Where("habit_id = ?", habitID).
-		Order("date DESC").
-		Find(&list).Error
+	q := r.db.WithContext(ctx).Where("habit_id = ?", habitID)
+	if from != nil {
+		q = q.Where("date >= ?", truncateDate(*from))
+	}
+	if to != nil {
+		q = q.Where("date <= ?", truncateDate(*to))
+	}
+	err := q.Order("date DESC").Find(&list).Error
 	return list, err
+}
+
+func (r *checkInRepo) CountByUserID(ctx context.Context, userID uint) (int64, error) {
+	var count int64
+	err := r.db.WithContext(ctx).
+		Model(&domain.CheckIn{}).
+		Joins("JOIN habits ON habits.id = check_ins.habit_id").
+		Where("habits.user_id = ?", userID).
+		Count(&count).Error
+	return count, err
 }
 
 func (r *checkInRepo) ExistsOnDate(ctx context.Context, habitID uint, date time.Time) (bool, error) {

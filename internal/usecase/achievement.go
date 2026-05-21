@@ -65,17 +65,29 @@ func (s *HabitService) achievementIDsToGrant(
 	var ids []uint
 	var granted []domain.Achievement
 
-	if err := s.tryCollectGrant(ctx, userID, domain.AchievementCodeFirstCheckIn, totalCheckInsAfter == 1, &ids, &granted); err != nil {
+	activeHabits, err := s.habits.ListByUserID(ctx, userID, false)
+	if err != nil {
 		return nil, nil, err
 	}
-	if err := s.tryCollectGrant(ctx, userID, domain.AchievementCodeCheckIns10, totalCheckInsAfter >= 10, &ids, &granted); err != nil {
-		return nil, nil, err
+
+	grants := []struct {
+		code string
+		ok   bool
+	}{
+		{domain.AchievementCodeFirstCheckIn, totalCheckInsAfter == 1},
+		{domain.AchievementCodeCheckIns10, totalCheckInsAfter >= 10},
+		{domain.AchievementCodeCheckIns50, totalCheckInsAfter >= 50},
+		{domain.AchievementCodeLevel3, user.Level >= 3},
+		{domain.AchievementCodeLevel5, user.Level >= 5},
+		{domain.AchievementCodeStreak7, habit.MaxStreak >= 7},
+		{domain.AchievementCodeStreak30, habit.MaxStreak >= 30},
+		{domain.AchievementCodeHabits5, len(activeHabits) >= 5},
 	}
-	if err := s.tryCollectGrant(ctx, userID, domain.AchievementCodeLevel3, user.Level >= 3, &ids, &granted); err != nil {
-		return nil, nil, err
-	}
-	if err := s.tryCollectGrant(ctx, userID, domain.AchievementCodeStreak7, habit.MaxStreak >= 7, &ids, &granted); err != nil {
-		return nil, nil, err
+
+	for _, g := range grants {
+		if err := s.tryCollectGrant(ctx, userID, g.code, g.ok, &ids, &granted); err != nil {
+			return nil, nil, err
+		}
 	}
 
 	return ids, granted, nil
@@ -109,18 +121,6 @@ func (s *HabitService) tryCollectGrant(
 }
 
 func (s *HabitService) totalUserCheckIns(ctx context.Context, userID uint) (int64, error) {
-	habits, err := s.habits.ListByUserID(ctx, userID, false)
-	if err != nil {
-		return 0, err
-	}
-	var total int64
-	for _, h := range habits {
-		n, err := s.checkIns.CountByHabitID(ctx, h.ID)
-		if err != nil {
-			return 0, err
-		}
-		total += n
-	}
-	return total, nil
+	return s.checkIns.CountByUserID(ctx, userID)
 }
 

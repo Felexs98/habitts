@@ -161,6 +161,42 @@
 					"response": []
 				},
 				{
+					"name": "Logout",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status 204 No Content', function () {",
+									"    pm.response.to.have.status(204);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"refresh_token\": \"{{refreshToken}}\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}{{apiPrefix}}/auth/logout",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "auth", "logout"]
+						},
+						"description": "Отзыв refresh-токена. После logout Refresh вернёт 401."
+					},
+					"response": []
+				},
+				{
 					"name": "Get Me (profile)",
 					"event": [
 						{
@@ -425,6 +461,24 @@
 							"path": ["api", "v1", "habits", "{{habitId}}", "check-ins"]
 						},
 						"description": "История логов выполнения привычки."
+					},
+					"response": []
+				},
+				{
+					"name": "List Check-ins (date range)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}{{apiPrefix}}/habits/{{habitId}}/check-ins?from=2026-05-01&to=2026-05-31",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "habits", "{{habitId}}", "check-ins"],
+							"query": [
+								{"key": "from", "value": "2026-05-01"},
+								{"key": "to", "value": "2026-05-31"}
+							]
+						},
+						"description": "Фильтр по периоду: from/to в формате YYYY-MM-DD."
 					},
 					"response": []
 				},

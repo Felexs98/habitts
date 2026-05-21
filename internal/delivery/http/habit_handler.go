@@ -3,6 +3,7 @@ package http
 import (
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"habit-tracker/internal/domain"
@@ -207,8 +208,11 @@ func (h *HabitHandler) Restore(c *gin.Context) {
 // @Tags         habits
 // @Security     BearerAuth
 // @Produce      json
-// @Param        id  path  int  true  "Habit ID"
+// @Param        id    path   int     true   "Habit ID"
+// @Param        from  query  string  false  "Начало периода (YYYY-MM-DD)"
+// @Param        to    query  string  false  "Конец периода (YYYY-MM-DD)"
 // @Success      200  {array}   domain.CheckIn
+// @Failure      400  {object}  errorResponse
 // @Failure      404  {object}  errorResponse
 // @Router       /habits/{id}/check-ins [get]
 func (h *HabitHandler) ListCheckIns(c *gin.Context) {
@@ -217,7 +221,21 @@ func (h *HabitHandler) ListCheckIns(c *gin.Context) {
 		return
 	}
 
-	list, err := h.habits.ListCheckIns(c.Request.Context(), userID, habitID)
+	from, err := parseOptionalDateQuery(c.Query("from"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, errorResponse{Error: "invalid from date, use YYYY-MM-DD"})
+		return
+	}
+	to, err := parseOptionalDateQuery(c.Query("to"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, errorResponse{Error: "invalid to date, use YYYY-MM-DD"})
+		return
+	}
+
+	list, err := h.habits.ListCheckIns(c.Request.Context(), userID, habitID, usecase.ListCheckInsInput{
+		From: from,
+		To:   to,
+	})
 	if err != nil {
 		writeError(c, err)
 		return
@@ -298,4 +316,17 @@ func parseHabitID(c *gin.Context) (userID, habitID uint, ok bool) {
 	}
 
 	return uid, uint(id), true
+}
+
+func parseOptionalDateQuery(raw string) (*time.Time, error) {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return nil, nil
+	}
+	t, err := time.Parse("2006-01-02", raw)
+	if err != nil {
+		return nil, err
+	}
+	utc := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.UTC)
+	return &utc, nil
 }

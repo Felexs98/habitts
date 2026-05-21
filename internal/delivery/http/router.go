@@ -51,6 +51,7 @@ func NewRouter(h *Handlers, jwtManager *jwtutil.Manager, cfg *config.Config) *gi
 		auth.POST("/register", h.Auth.Register)
 		auth.POST("/login", h.Auth.Login)
 		auth.POST("/refresh", h.Auth.Refresh)
+		auth.POST("/logout", h.Auth.Logout)
 	}
 
 	protected := api.Group("")

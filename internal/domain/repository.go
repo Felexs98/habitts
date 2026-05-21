@@ -25,14 +25,16 @@ type HabitRepository interface {
 	Update(ctx context.Context, habit *Habit) error
 	Delete(ctx context.Context, id, userID uint) error
 	Restore(ctx context.Context, id, userID uint) error
+	PurgeArchivedBefore(ctx context.Context, deletedBefore time.Time) (int64, error)
 }
 
 type CheckInRepository interface {
 	Create(ctx context.Context, checkIn *CheckIn) error
 	Apply(ctx context.Context, apply *CheckInApply) error
-	ListByHabitID(ctx context.Context, habitID uint) ([]CheckIn, error)
+	ListByHabitID(ctx context.Context, habitID uint, from, to *time.Time) ([]CheckIn, error)
 	ExistsOnDate(ctx context.Context, habitID uint, date time.Time) (bool, error)
 	CountByHabitID(ctx context.Context, habitID uint) (int64, error)
+	CountByUserID(ctx context.Context, userID uint) (int64, error)
 	CheckedHabitIDsOnDate(ctx context.Context, userID uint, date time.Time) (map[uint]bool, error)
 }
 

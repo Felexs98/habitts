@@ -30,6 +30,10 @@ type Config struct {
 	RateLimitAuthBurst int
 	RateLimitAPIRPM    int
 	RateLimitAPIBurst  int
+
+	ArchivePurgeEnabled  bool
+	ArchivePurgeDays     int
+	ArchivePurgeInterval time.Duration
 }
 
 func Load() *Config {
@@ -54,6 +58,10 @@ func Load() *Config {
 		RateLimitAuthBurst: getenvInt("RATE_LIMIT_AUTH_BURST", 3),
 		RateLimitAPIRPM:    getenvInt("RATE_LIMIT_API_RPM", 120),
 		RateLimitAPIBurst:  getenvInt("RATE_LIMIT_API_BURST", 30),
+
+		ArchivePurgeEnabled:  getenvBool("ARCHIVE_PURGE_ENABLED", true),
+		ArchivePurgeDays:     getenvInt("ARCHIVE_PURGE_DAYS", 7),
+		ArchivePurgeInterval: getenvDuration("ARCHIVE_PURGE_INTERVAL", 24*time.Hour),
 	}
 }
 

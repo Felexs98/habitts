@@ -212,7 +212,7 @@ func (s *HabitService) CheckIn(ctx context.Context, userID, habitID uint, date t
 		return nil, domain.ErrDuplicateCheck
 	}
 
-	list, err := s.checkIns.ListByHabitID(ctx, habitID)
+	list, err := s.checkIns.ListByHabitID(ctx, habitID, nil, nil)
 	if err != nil {
 		return nil, err
 	}

@@ -17,7 +17,7 @@ func TestHabitService_ListCheckIns(t *testing.T) {
 	day := time.Date(2026, 5, 20, 0, 0, 0, 0, time.UTC)
 	checkIns.Create(ctx, &domain.CheckIn{HabitID: 1, Date: day})
 
-	list, err := svc.ListCheckIns(ctx, 1, 1)
+	list, err := svc.ListCheckIns(ctx, 1, 1, ListCheckInsInput{})
 	if err != nil {
 		t.Fatalf("ListCheckIns() error = %v", err)
 	}

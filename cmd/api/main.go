@@ -41,6 +41,8 @@ func main() {
 	habitUC := usecase.NewHabitService(habitRepo, checkInRepo, userRepo, achievementRepo)
 	achievementUC := usecase.NewAchievementService(achievementRepo)
 
+	usecase.StartArchivePurgeLoop(habitUC, cfg.ArchivePurgeEnabled, cfg.ArchivePurgeDays, cfg.ArchivePurgeInterval)
+
 	handlers := delivery.NewHandlers(authUC, habitUC, achievementUC)
 	router := delivery.NewRouter(handlers, jwtManager, cfg)
 

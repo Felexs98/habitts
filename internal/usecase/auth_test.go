@@ -184,6 +184,21 @@ func TestAuthService_UpdateProfile(t *testing.T) {
 	}
 }
 
+func TestAuthService_Logout_RevokesRefresh(t *testing.T) {
+	svc := newTestAuthService()
+	ctx := context.Background()
+
+	reg, _ := svc.Register(ctx, RegisterInput{Email: "logout@test.com", Password: "secret12"})
+	if err := svc.Logout(ctx, RefreshInput{RefreshToken: reg.RefreshToken}); err != nil {
+		t.Fatalf("Logout() error = %v", err)
+	}
+
+	_, err := svc.Refresh(ctx, RefreshInput{RefreshToken: reg.RefreshToken})
+	if !errors.Is(err, domain.ErrUnauthorized) {
+		t.Errorf("Refresh after logout error = %v, want ErrUnauthorized", err)
+	}
+}
+
 func TestAuthService_GetMe(t *testing.T) {
 	svc := newTestAuthService()
 	ctx := context.Background()

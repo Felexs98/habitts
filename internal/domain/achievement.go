@@ -3,10 +3,14 @@ package domain
 import "time"
 
 const (
-	AchievementCodeStreak7      = "streak_7"
-	AchievementCodeFirstCheckIn = "first_check_in"
-	AchievementCodeCheckIns10   = "check_ins_10"
-	AchievementCodeLevel3       = "level_3"
+	AchievementCodeStreak7        = "streak_7"
+	AchievementCodeStreak30       = "streak_30"
+	AchievementCodeFirstCheckIn   = "first_check_in"
+	AchievementCodeCheckIns10     = "check_ins_10"
+	AchievementCodeCheckIns50     = "check_ins_50"
+	AchievementCodeLevel3         = "level_3"
+	AchievementCodeLevel5         = "level_5"
+	AchievementCodeHabits5        = "habits_5"
 )
 
 type Achievement struct {

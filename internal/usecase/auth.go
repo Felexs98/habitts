@@ -129,6 +129,20 @@ func (s *AuthService) Refresh(ctx context.Context, in RefreshInput) (*AuthResult
 	return s.issueTokens(ctx, user)
 }
 
+// Logout отзывает refresh-токен (идемпотентно).
+func (s *AuthService) Logout(ctx context.Context, in RefreshInput) error {
+	token := strings.TrimSpace(in.RefreshToken)
+	if token == "" {
+		return domain.ErrInvalidInput
+	}
+	claims, err := s.jwt.ParseRefresh(token)
+	if err != nil {
+		return nil
+	}
+	_ = s.refresh.Delete(ctx, claims.JTI)
+	return nil
+}
+
 func (s *AuthService) GetMe(ctx context.Context, userID uint) (*domain.User, error) {
 	return s.users.FindByID(ctx, userID)
 }

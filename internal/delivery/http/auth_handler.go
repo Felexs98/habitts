@@ -76,6 +76,30 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	c.JSON(http.StatusOK, result)
 }
 
+// Logout godoc
+// @Summary      Выход (отзыв refresh-токена)
+// @Tags         auth
+// @Accept       json
+// @Produce      json
+// @Param        body  body      logoutRequest  true  "Refresh token"
+// @Success      204
+// @Failure      400   {object}  errorResponse
+// @Router       /auth/logout [post]
+func (h *AuthHandler) Logout(c *gin.Context) {
+	var req logoutRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, errorResponse{Error: err.Error()})
+		return
+	}
+	if err := h.auth.Logout(c.Request.Context(), usecase.RefreshInput{
+		RefreshToken: req.RefreshToken,
+	}); err != nil {
+		writeError(c, err)
+		return
+	}
+	c.Status(http.StatusNoContent)
+}
+
 // Me godoc
 // @Summary      Профиль текущего пользователя
 // @Tags         auth

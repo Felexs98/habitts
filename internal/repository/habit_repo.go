@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"errors"
+	"time"
 
 	"habit-tracker/internal/domain"
 
@@ -56,6 +57,14 @@ func (r *habitRepo) Delete(ctx context.Context, id, userID uint) error {
 		return domain.ErrNotFound
 	}
 	return nil
+}
+
+func (r *habitRepo) PurgeArchivedBefore(ctx context.Context, deletedBefore time.Time) (int64, error) {
+	res := r.db.WithContext(ctx).
+		Unscoped().
+		Where("deleted_at IS NOT NULL AND deleted_at < ?", deletedBefore).
+		Delete(&domain.Habit{})
+	return res.RowsAffected, res.Error
 }
 
 func (r *habitRepo) Restore(ctx context.Context, id, userID uint) error {

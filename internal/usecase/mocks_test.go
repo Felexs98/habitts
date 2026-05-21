@@ -128,6 +128,16 @@ func (m *mockHabitRepo) Delete(_ context.Context, id, userID uint) error {
 	return nil
 }
 
+func (m *mockHabitRepo) PurgeArchivedBefore(_ context.Context, _ time.Time) (int64, error) {
+	var n int64
+	for id := range m.deletedAt {
+		delete(m.habits, id)
+		delete(m.deletedAt, id)
+		n++
+	}
+	return n, nil
+}
+
 func (m *mockHabitRepo) Restore(_ context.Context, id, userID uint) error {
 	h, ok := m.habits[id]
 	if !ok || h.UserID != userID || !m.deletedAt[id] {
@@ -188,8 +198,30 @@ func (m *mockCheckInRepo) Apply(_ context.Context, apply *domain.CheckInApply) e
 	return nil
 }
 
-func (m *mockCheckInRepo) ListByHabitID(_ context.Context, habitID uint) ([]domain.CheckIn, error) {
-	return append([]domain.CheckIn(nil), m.byHabit[habitID]...), nil
+func (m *mockCheckInRepo) ListByHabitID(_ context.Context, habitID uint, from, to *time.Time) ([]domain.CheckIn, error) {
+	var out []domain.CheckIn
+	for _, c := range m.byHabit[habitID] {
+		d := truncateDate(c.Date)
+		if from != nil && d.Before(truncateDate(*from)) {
+			continue
+		}
+		if to != nil && d.After(truncateDate(*to)) {
+			continue
+		}
+		out = append(out, c)
+	}
+	return out, nil
+}
+
+func (m *mockCheckInRepo) CountByUserID(_ context.Context, userID uint) (int64, error) {
+	var total int64
+	for _, h := range m.habits.habits {
+		if h.UserID != userID {
+			continue
+		}
+		total += int64(len(m.byHabit[h.ID]))
+	}
+	return total, nil
 }
 
 func (m *mockCheckInRepo) ExistsOnDate(_ context.Context, habitID uint, date time.Time) (bool, error) {
@@ -220,6 +252,10 @@ func newMockAchievementRepo() *mockAchievementRepo {
 		{ID: 2, Code: domain.AchievementCodeCheckIns10, Title: "Десять побед"},
 		{ID: 3, Code: domain.AchievementCodeLevel3, Title: "Опытный трекер"},
 		{ID: 4, Code: domain.AchievementCodeStreak7, Title: "Неделя без перерывов"},
+		{ID: 5, Code: domain.AchievementCodeStreak30, Title: "Месяц дисциплины"},
+		{ID: 6, Code: domain.AchievementCodeCheckIns50, Title: "Полсотни побед"},
+		{ID: 7, Code: domain.AchievementCodeLevel5, Title: "Мастер трекинга"},
+		{ID: 8, Code: domain.AchievementCodeHabits5, Title: "Мультитрекер"},
 	}
 	byCode := make(map[string]*domain.Achievement, len(seed))
 	for i := range seed {

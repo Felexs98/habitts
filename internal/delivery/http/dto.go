@@ -14,6 +14,10 @@ type refreshRequest struct {
 	RefreshToken string `json:"refresh_token" binding:"required"`
 }
 
+type logoutRequest struct {
+	RefreshToken string `json:"refresh_token" binding:"required"`
+}
+
 type updateProfileRequest struct {
 	Email           *string `json:"email"`
 	DisplayName     *string `json:"display_name"`

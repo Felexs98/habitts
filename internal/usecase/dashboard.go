@@ -26,11 +26,19 @@ type Dashboard struct {
 	ActiveStreaks     []HabitStreakSummary `json:"active_streaks"`
 }
 
-func (s *HabitService) ListCheckIns(ctx context.Context, userID, habitID uint) ([]domain.CheckIn, error) {
+type ListCheckInsInput struct {
+	From *time.Time
+	To   *time.Time
+}
+
+func (s *HabitService) ListCheckIns(ctx context.Context, userID, habitID uint, in ListCheckInsInput) ([]domain.CheckIn, error) {
+	if in.From != nil && in.To != nil && in.From.After(*in.To) {
+		return nil, domain.ErrInvalidInput
+	}
 	if _, err := s.Get(ctx, userID, habitID); err != nil {
 		return nil, err
 	}
-	return s.checkIns.ListByHabitID(ctx, habitID)
+	return s.checkIns.ListByHabitID(ctx, habitID, in.From, in.To)
 }
 
 func (s *HabitService) Dashboard(ctx context.Context, userID uint) (*Dashboard, error) {

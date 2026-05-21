@@ -103,6 +103,26 @@ func SeedAchievements(db *gorm.DB) error {
 			Title:       "Неделя без перерывов",
 			Description: "Достигните серии из 7 дней выполнения привычки",
 		},
+		{
+			Code:        domain.AchievementCodeStreak30,
+			Title:       "Месяц дисциплины",
+			Description: "Достигните серии из 30 дней по одной привычке",
+		},
+		{
+			Code:        domain.AchievementCodeCheckIns50,
+			Title:       "Полсотни побед",
+			Description: "Совершите 50 отметок по всем привычкам",
+		},
+		{
+			Code:        domain.AchievementCodeLevel5,
+			Title:       "Мастер трекинга",
+			Description: "Достигните 5 уровня профиля",
+		},
+		{
+			Code:        domain.AchievementCodeHabits5,
+			Title:       "Мультитрекер",
+			Description: "Ведите 5 и более активных привычек",
+		},
 	}
 	for _, a := range seed {
 		var existing domain.Achievement

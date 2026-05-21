@@ -9,6 +9,9 @@ build:
 test:
 	go test ./... -v
 
+test-integration:
+	go test -tags=integration -v -count=1 ./test/integration/...
+
 tidy:
 	go mod tidy
 
