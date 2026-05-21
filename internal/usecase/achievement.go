@@ -55,28 +55,57 @@ func (s *AchievementService) ListForUser(ctx context.Context, userID uint) ([]Us
 	return out, nil
 }
 
-func (s *HabitService) grantAchievements(ctx context.Context, userID uint, habit *domain.Habit, user *domain.User) ([]domain.Achievement, error) {
+func (s *HabitService) achievementIDsToGrant(
+	ctx context.Context,
+	userID uint,
+	habit *domain.Habit,
+	user *domain.User,
+	totalCheckInsAfter int64,
+) ([]uint, []domain.Achievement, error) {
+	var ids []uint
 	var granted []domain.Achievement
 
-	totalCheckIns, err := s.totalUserCheckIns(ctx, userID)
+	if err := s.tryCollectGrant(ctx, userID, domain.AchievementCodeFirstCheckIn, totalCheckInsAfter == 1, &ids, &granted); err != nil {
+		return nil, nil, err
+	}
+	if err := s.tryCollectGrant(ctx, userID, domain.AchievementCodeCheckIns10, totalCheckInsAfter >= 10, &ids, &granted); err != nil {
+		return nil, nil, err
+	}
+	if err := s.tryCollectGrant(ctx, userID, domain.AchievementCodeLevel3, user.Level >= 3, &ids, &granted); err != nil {
+		return nil, nil, err
+	}
+	if err := s.tryCollectGrant(ctx, userID, domain.AchievementCodeStreak7, habit.MaxStreak >= 7, &ids, &granted); err != nil {
+		return nil, nil, err
+	}
+
+	return ids, granted, nil
+}
+
+func (s *HabitService) tryCollectGrant(
+	ctx context.Context,
+	userID uint,
+	code string,
+	condition bool,
+	ids *[]uint,
+	granted *[]domain.Achievement,
+) error {
+	if !condition {
+		return nil
+	}
+	ach, err := s.achievements.FindByCode(ctx, code)
 	if err != nil {
-		return nil, err
+		return err
 	}
-
-	if err := s.tryGrant(ctx, userID, domain.AchievementCodeFirstCheckIn, totalCheckIns == 1, &granted); err != nil {
-		return nil, err
+	has, err := s.achievements.HasUserAchievement(ctx, userID, ach.ID)
+	if err != nil {
+		return err
 	}
-	if err := s.tryGrant(ctx, userID, domain.AchievementCodeCheckIns10, totalCheckIns >= 10, &granted); err != nil {
-		return nil, err
+	if has {
+		return nil
 	}
-	if err := s.tryGrant(ctx, userID, domain.AchievementCodeLevel3, user.Level >= 3, &granted); err != nil {
-		return nil, err
-	}
-	if err := s.tryGrant(ctx, userID, domain.AchievementCodeStreak7, habit.MaxStreak >= 7, &granted); err != nil {
-		return nil, err
-	}
-
-	return granted, nil
+	*ids = append(*ids, ach.ID)
+	*granted = append(*granted, *ach)
+	return nil
 }
 
 func (s *HabitService) totalUserCheckIns(ctx context.Context, userID uint) (int64, error) {
@@ -95,32 +124,3 @@ func (s *HabitService) totalUserCheckIns(ctx context.Context, userID uint) (int6
 	return total, nil
 }
 
-func (s *HabitService) tryGrant(ctx context.Context, userID uint, code string, condition bool, granted *[]domain.Achievement) error {
-	if !condition {
-		return nil
-	}
-	a, err := s.grantByCode(ctx, userID, code)
-	if err != nil {
-		return err
-	}
-	if a != nil {
-		*granted = append(*granted, *a)
-	}
-	return nil
-}
-
-func (s *HabitService) grantByCode(ctx context.Context, userID uint, code string) (*domain.Achievement, error) {
-	ach, err := s.achievements.FindByCode(ctx, code)
-	if err != nil {
-		return nil, err
-	}
-
-	ua, err := s.achievements.Grant(ctx, userID, ach.ID)
-	if err != nil {
-		return nil, err
-	}
-	if ua == nil {
-		return nil, nil
-	}
-	return &ua.Achievement, nil
-}

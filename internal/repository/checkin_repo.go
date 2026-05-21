@@ -8,6 +8,7 @@ import (
 	"habit-tracker/internal/domain"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type checkInRepo struct {
@@ -24,6 +25,46 @@ func (r *checkInRepo) Create(ctx context.Context, checkIn *domain.CheckIn) error
 		return domain.ErrDuplicateCheck
 	}
 	return err
+}
+
+// Apply выполняет check-in в одной транзакции: лог, streak, XP, user_achievements.
+func (r *checkInRepo) Apply(ctx context.Context, apply *domain.CheckInApply) error {
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := tx.Create(apply.CheckIn).Error; err != nil {
+			if errors.Is(err, gorm.ErrDuplicatedKey) {
+				return domain.ErrDuplicateCheck
+			}
+			return err
+		}
+
+		if err := tx.Model(&domain.Habit{}).Where("id = ?", apply.Habit.ID).
+			Updates(map[string]interface{}{
+				"current_streak": apply.Habit.CurrentStreak,
+				"max_streak":     apply.Habit.MaxStreak,
+			}).Error; err != nil {
+			return err
+		}
+
+		if err := tx.Model(&domain.User{}).Where("id = ?", apply.User.ID).
+			Updates(map[string]interface{}{
+				"xp":    apply.User.XP,
+				"level": apply.User.Level,
+			}).Error; err != nil {
+			return err
+		}
+
+		for _, achievementID := range apply.AchievementIDsToGrant {
+			ua := &domain.UserAchievement{
+				UserID:        apply.User.ID,
+				AchievementID: achievementID,
+			}
+			if err := tx.Clauses(clause.OnConflict{DoNothing: true}).Create(ua).Error; err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
 }
 
 func (r *checkInRepo) ListByHabitID(ctx context.Context, habitID uint) ([]domain.CheckIn, error) {

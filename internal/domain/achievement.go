@@ -18,7 +18,7 @@ type Achievement struct {
 
 type UserAchievement struct {
 	ID            uint      `json:"id" gorm:"primaryKey"`
-	UserID        uint      `json:"user_id" gorm:"not null;uniqueIndex:idx_user_achievement"`
+	UserID        uint      `json:"user_id" gorm:"not null;uniqueIndex:idx_user_achievement;index:idx_user_achievements_user,priority:1"`
 	AchievementID uint      `json:"achievement_id" gorm:"not null;uniqueIndex:idx_user_achievement"`
 	EarnedAt      time.Time `json:"earned_at"`
 

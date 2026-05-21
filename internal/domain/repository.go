@@ -23,6 +23,7 @@ type HabitRepository interface {
 
 type CheckInRepository interface {
 	Create(ctx context.Context, checkIn *CheckIn) error
+	Apply(ctx context.Context, apply *CheckInApply) error
 	ListByHabitID(ctx context.Context, habitID uint) ([]CheckIn, error)
 	ExistsOnDate(ctx context.Context, habitID uint, date time.Time) (bool, error)
 	CountByHabitID(ctx context.Context, habitID uint) (int64, error)

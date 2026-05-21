@@ -9,9 +9,9 @@ import (
 
 func newTestHabitService() (*HabitService, *mockUserRepo, *mockHabitRepo, *mockCheckInRepo) {
 	habits := newMockHabitRepo()
-	checkIns := newMockCheckInRepo()
 	users := newMockUserRepo()
 	achievements := newMockAchievementRepo()
+	checkIns := newMockCheckInRepo(habits, users, achievements)
 	return NewHabitService(habits, checkIns, users, achievements), users, habits, checkIns
 }
 
@@ -138,12 +138,20 @@ func (m *mockHabitRepo) Restore(_ context.Context, id, userID uint) error {
 }
 
 type mockCheckInRepo struct {
-	byHabit map[uint][]domain.CheckIn
-	nextID  uint
+	byHabit      map[uint][]domain.CheckIn
+	nextID       uint
+	habits       *mockHabitRepo
+	users        *mockUserRepo
+	achievements *mockAchievementRepo
 }
 
-func newMockCheckInRepo() *mockCheckInRepo {
-	return &mockCheckInRepo{byHabit: make(map[uint][]domain.CheckIn)}
+func newMockCheckInRepo(habits *mockHabitRepo, users *mockUserRepo, achievements *mockAchievementRepo) *mockCheckInRepo {
+	return &mockCheckInRepo{
+		byHabit:      make(map[uint][]domain.CheckIn),
+		habits:       habits,
+		users:        users,
+		achievements: achievements,
+	}
 }
 
 func (m *mockCheckInRepo) Create(_ context.Context, checkIn *domain.CheckIn) error {
@@ -151,6 +159,32 @@ func (m *mockCheckInRepo) Create(_ context.Context, checkIn *domain.CheckIn) err
 	checkIn.ID = m.nextID
 	cp := *checkIn
 	m.byHabit[checkIn.HabitID] = append(m.byHabit[checkIn.HabitID], cp)
+	return nil
+}
+
+func (m *mockCheckInRepo) Apply(_ context.Context, apply *domain.CheckInApply) error {
+	d := truncateDate(apply.CheckIn.Date)
+	for _, c := range m.byHabit[apply.CheckIn.HabitID] {
+		if truncateDate(c.Date).Equal(d) {
+			return domain.ErrDuplicateCheck
+		}
+	}
+	if err := m.Create(context.Background(), apply.CheckIn); err != nil {
+		return err
+	}
+	if h, ok := m.habits.habits[apply.Habit.ID]; ok {
+		h.CurrentStreak = apply.Habit.CurrentStreak
+		h.MaxStreak = apply.Habit.MaxStreak
+	}
+	if u, ok := m.users.byID[apply.User.ID]; ok {
+		u.XP = apply.User.XP
+		u.Level = apply.User.Level
+	}
+	for _, achID := range apply.AchievementIDsToGrant {
+		if _, err := m.achievements.Grant(context.Background(), apply.User.ID, achID); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 

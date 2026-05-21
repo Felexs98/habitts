@@ -212,40 +212,44 @@ func (s *HabitService) CheckIn(ctx context.Context, userID, habitID uint, date t
 		return nil, domain.ErrDuplicateCheck
 	}
 
-	checkIn := &domain.CheckIn{
-		HabitID: habitID,
-		Date:    d,
-	}
-	if err := s.checkIns.Create(ctx, checkIn); err != nil {
-		return nil, err
-	}
-
 	list, err := s.checkIns.ListByHabitID(ctx, habitID)
 	if err != nil {
 		return nil, err
 	}
-	streak := domain.CalcStreakEndingOn(list, d)
+
+	checkIn := &domain.CheckIn{
+		HabitID: habitID,
+		Date:    d,
+	}
+	listWithNew := append(list, *checkIn)
+	streak := domain.CalcStreakEndingOn(listWithNew, d)
 	habit.CurrentStreak = streak
 	if streak > habit.MaxStreak {
 		habit.MaxStreak = streak
-	}
-	if err := s.habits.Update(ctx, habit); err != nil {
-		return nil, err
 	}
 
 	user, err := s.users.FindByID(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
-
 	user.XP += domain.XPPerCheckIn
 	user.Level = domain.LevelFromXP(user.XP)
-	if err := s.users.Update(ctx, user); err != nil {
+
+	totalBefore, err := s.totalUserCheckIns(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	achIDs, newAchievements, err := s.achievementIDsToGrant(ctx, userID, habit, user, totalBefore+1)
+	if err != nil {
 		return nil, err
 	}
 
-	newAchievements, err := s.grantAchievements(ctx, userID, habit, user)
-	if err != nil {
+	if err := s.checkIns.Apply(ctx, &domain.CheckInApply{
+		CheckIn:               checkIn,
+		Habit:                 habit,
+		User:                  user,
+		AchievementIDsToGrant: achIDs,
+	}); err != nil {
 		return nil, err
 	}
 

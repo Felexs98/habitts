@@ -4,8 +4,8 @@ import "time"
 
 type CheckIn struct {
 	ID        uint      `json:"id" gorm:"primaryKey"`
-	HabitID   uint      `json:"habit_id" gorm:"not null;index:idx_habit_date,unique"`
-	Date      time.Time `json:"date" gorm:"type:date;not null;index:idx_habit_date,unique"`
+	HabitID   uint      `json:"habit_id" gorm:"not null;index:idx_habit_date,unique,priority:1;index:idx_checkins_habit_list,priority:1"`
+	Date      time.Time `json:"date" gorm:"type:date;not null;index:idx_habit_date,unique,priority:2;index:idx_checkins_date_user,priority:1;index:idx_checkins_habit_list,priority:2"`
 	CreatedAt time.Time `json:"created_at"`
 
 	Habit Habit `json:"-" gorm:"foreignKey:HabitID;constraint:OnDelete:CASCADE"`
