@@ -42,7 +42,7 @@ func main() {
 	achievementUC := usecase.NewAchievementService(achievementRepo)
 
 	handlers := delivery.NewHandlers(authUC, habitUC, achievementUC)
-	router := delivery.NewRouter(handlers, jwtManager)
+	router := delivery.NewRouter(handlers, jwtManager, cfg)
 
 	addr := ":" + cfg.AppPort
 	log.Printf("server starting on %s (env=%s)", addr, cfg.AppEnv)

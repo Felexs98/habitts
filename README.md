@@ -20,7 +20,7 @@ internal/
   repository/         — GORM + PostgreSQL
   usecase/            — бизнес-логика (auth, habits, streak)
   delivery/http/      — HTTP handlers (Gin)
-  middleware/         — JWT middleware
+  middleware/         — JWT, CORS, rate limit
 pkg/
   hash/               — bcrypt
   jwtutil/            — JWT
@@ -36,6 +36,15 @@ make test
 ```
 
 Покрыты `internal/domain` (уровень от XP) и `internal/usecase` (auth, check-in, streak) с моками репозиториев.
+
+## CI (GitHub Actions)
+
+При push/PR в `main` или `master` запускается workflow [`.github/workflows/ci.yml`](.github/workflows/ci.yml):
+
+1. `go test -v -count=1 ./...`
+2. `go build -o bin/api ./cmd/api`
+
+Версия Go берётся из `go.mod` (`actions/setup-go` + `go-version-file`). Для отчёта по диплому: вкладка **Actions** в репозитории GitHub → зелёный прогон после `git push`.
 
 ## Периодичность привычек
 
@@ -66,6 +75,20 @@ make test
 ## CORS (веб-фронт)
 
 Браузерные клиенты (React, Vue на `localhost:3000` / `:5173`) могут вызывать API. Настройка через `CORS_ORIGINS` в `.env` (см. `.env.example`).
+
+## Rate limiting
+
+Защита от перегрузки и brute-force на `POST /auth/login` и `POST /auth/register`: middleware на базе **token bucket** (`golang.org/x/time/rate`), лимит **по IP** (`ClientIP`).
+
+| Переменная | По умолчанию | Назначение |
+|------------|--------------|------------|
+| `RATE_LIMIT_ENABLED` | `true` | Выкл. для локальной отладки: `false` |
+| `RATE_LIMIT_AUTH_RPM` | `10` | Запросов/мин на IP для `/api/v1/auth/*` |
+| `RATE_LIMIT_AUTH_BURST` | `3` | Кратковременный всплеск для auth |
+| `RATE_LIMIT_API_RPM` | `120` | Запросов/мин на IP для всего `/api/v1` |
+| `RATE_LIMIT_API_BURST` | `30` | Burst для API |
+
+При превышении: **HTTP 429** `{"error":"too many requests"}`. На auth действуют **оба** лимита (API + ужесточённый auth).
 
 ## Postman
 
@@ -148,7 +171,9 @@ docker compose up --build -d   # пересборка, чтобы UI подхв�
 
 ## Следующие шаги для диплома
 
-- [ ] Расширить геймификацию (очки, уровни, achievements)
-- [ ] Unit-тесты usecase-слоя
+- [x] Геймификация (XP, уровни, achievements, dashboard)
+- [x] Unit-тесты usecase-слоя
 - [ ] Миграции (опционально, вместо только AutoMigrate)
-- [ ] CI (lint, test, build)
+- [x] CI (test, build) — GitHub Actions
+- [ ] CI: golangci-lint (опционально)
+- [x] Rate limiting (token bucket, auth + API)

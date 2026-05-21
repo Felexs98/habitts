@@ -1,6 +1,7 @@
 package http
 
 import (
+	"habit-tracker/internal/config"
 	"habit-tracker/internal/middleware"
 	"habit-tracker/internal/usecase"
 	"habit-tracker/pkg/jwtutil"
@@ -17,9 +18,22 @@ type Handlers struct {
 	Dashboard   *DashboardHandler
 }
 
-func NewRouter(h *Handlers, jwtManager *jwtutil.Manager) *gin.Engine {
+func NewRouter(h *Handlers, jwtManager *jwtutil.Manager, cfg *config.Config) *gin.Engine {
 	r := gin.Default()
 	r.Use(middleware.CORS())
+
+	rl := middleware.RateLimitSet{
+		API: middleware.RateLimitOptions{
+			Enabled:           cfg.RateLimitEnabled,
+			RequestsPerMinute: cfg.RateLimitAPIRPM,
+			Burst:             cfg.RateLimitAPIBurst,
+		},
+		Auth: middleware.RateLimitOptions{
+			Enabled:           cfg.RateLimitEnabled,
+			RequestsPerMinute: cfg.RateLimitAuthRPM,
+			Burst:             cfg.RateLimitAuthBurst,
+		},
+	}
 
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok"})
@@ -29,8 +43,10 @@ func NewRouter(h *Handlers, jwtManager *jwtutil.Manager) *gin.Engine {
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	api := r.Group("/api/v1")
+	api.Use(middleware.RateLimit(rl.API))
 
 	auth := api.Group("/auth")
+	auth.Use(middleware.RateLimit(rl.Auth))
 	{
 		auth.POST("/register", h.Auth.Register)
 		auth.POST("/login", h.Auth.Login)
