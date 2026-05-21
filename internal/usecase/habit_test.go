@@ -135,11 +135,11 @@ func TestHabitService_List_TodayFilter(t *testing.T) {
 	todayWd := int(today.Weekday())
 	otherWd := (todayWd + 1) % 7
 
-	habits.Create(ctx, &domain.Habit{UserID: 1, Title: "Daily", Frequency: domain.FrequencyDaily})
-	habits.Create(ctx, &domain.Habit{UserID: 1, Title: "Weekly today", Frequency: domain.FrequencyWeekly, Weekday: &todayWd})
-	habits.Create(ctx, &domain.Habit{UserID: 1, Title: "Weekly other", Frequency: domain.FrequencyWeekly, Weekday: &otherWd})
-	habits.Create(ctx, &domain.Habit{UserID: 1, Title: "Daily done", Frequency: domain.FrequencyDaily})
-	checkIns.Create(ctx, &domain.CheckIn{HabitID: 4, Date: truncateDate(today)})
+	mustCreateHabit(t, ctx, habits, &domain.Habit{UserID: 1, Title: "Daily", Frequency: domain.FrequencyDaily})
+	mustCreateHabit(t, ctx, habits, &domain.Habit{UserID: 1, Title: "Weekly today", Frequency: domain.FrequencyWeekly, Weekday: &todayWd})
+	mustCreateHabit(t, ctx, habits, &domain.Habit{UserID: 1, Title: "Weekly other", Frequency: domain.FrequencyWeekly, Weekday: &otherWd})
+	mustCreateHabit(t, ctx, habits, &domain.Habit{UserID: 1, Title: "Daily done", Frequency: domain.FrequencyDaily})
+	mustCreateCheckIn(t, ctx, checkIns, &domain.CheckIn{HabitID: 4, Date: truncateDate(today)})
 
 	list, err := svc.List(ctx, 1, ListHabitsInput{Today: true})
 	if err != nil {

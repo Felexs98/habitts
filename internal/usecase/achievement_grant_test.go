@@ -12,8 +12,8 @@ func TestHabitService_CheckIn_GrantsFirstCheckIn(t *testing.T) {
 	svc, users, habits, _ := newTestHabitService()
 	ctx := context.Background()
 
-	users.Create(ctx, &domain.User{ID: 1, Email: "u@test.com"})
-	habits.Create(ctx, &domain.Habit{UserID: 1, Title: "Read"})
+	mustCreateUser(t, ctx, users, &domain.User{ID: 1, Email: "u@test.com"})
+	mustCreateHabit(t, ctx, habits, &domain.Habit{UserID: 1, Title: "Read"})
 
 	result, err := svc.CheckIn(ctx, 1, 1, mustDate(2026, 5, 20))
 	if err != nil {
@@ -35,8 +35,8 @@ func TestHabitService_CheckIn_GrantsLevel3(t *testing.T) {
 	svc, users, habits, _ := newTestHabitService()
 	ctx := context.Background()
 
-	users.Create(ctx, &domain.User{ID: 1, Email: "u@test.com", XP: 190, Level: 2})
-	habits.Create(ctx, &domain.Habit{UserID: 1, Title: "Run"})
+	mustCreateUser(t, ctx, users, &domain.User{ID: 1, Email: "u@test.com", XP: 190, Level: 2})
+	mustCreateHabit(t, ctx, habits, &domain.Habit{UserID: 1, Title: "Run"})
 
 	result, err := svc.CheckIn(ctx, 1, 1, mustDate(2026, 5, 20))
 	if err != nil {

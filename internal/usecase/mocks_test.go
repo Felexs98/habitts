@@ -2,10 +2,32 @@ package usecase
 
 import (
 	"context"
+	"testing"
 	"time"
 
 	"habit-tracker/internal/domain"
 )
+
+func mustCreateUser(t *testing.T, ctx context.Context, repo *mockUserRepo, user *domain.User) {
+	t.Helper()
+	if err := repo.Create(ctx, user); err != nil {
+		t.Fatalf("create user: %v", err)
+	}
+}
+
+func mustCreateHabit(t *testing.T, ctx context.Context, repo *mockHabitRepo, habit *domain.Habit) {
+	t.Helper()
+	if err := repo.Create(ctx, habit); err != nil {
+		t.Fatalf("create habit: %v", err)
+	}
+}
+
+func mustCreateCheckIn(t *testing.T, ctx context.Context, repo *mockCheckInRepo, checkIn *domain.CheckIn) {
+	t.Helper()
+	if err := repo.Create(ctx, checkIn); err != nil {
+		t.Fatalf("create check-in: %v", err)
+	}
+}
 
 func newTestHabitService() (*HabitService, *mockUserRepo, *mockHabitRepo, *mockCheckInRepo) {
 	habits := newMockHabitRepo()

@@ -12,10 +12,10 @@ func TestHabitService_ListCheckIns(t *testing.T) {
 	svc, users, habits, checkIns := newTestHabitService()
 	ctx := context.Background()
 
-	users.Create(ctx, &domain.User{ID: 1, Email: "u@test.com"})
-	habits.Create(ctx, &domain.Habit{UserID: 1, Title: "Read"})
+	mustCreateUser(t, ctx, users, &domain.User{ID: 1, Email: "u@test.com"})
+	mustCreateHabit(t, ctx, habits, &domain.Habit{UserID: 1, Title: "Read"})
 	day := time.Date(2026, 5, 20, 0, 0, 0, 0, time.UTC)
-	checkIns.Create(ctx, &domain.CheckIn{HabitID: 1, Date: day})
+	mustCreateCheckIn(t, ctx, checkIns, &domain.CheckIn{HabitID: 1, Date: day})
 
 	list, err := svc.ListCheckIns(ctx, 1, 1, ListCheckInsInput{})
 	if err != nil {
@@ -30,11 +30,11 @@ func TestHabitService_Dashboard(t *testing.T) {
 	svc, users, habits, checkIns := newTestHabitService()
 	ctx := context.Background()
 
-	users.Create(ctx, &domain.User{ID: 1, Email: "dash@test.com", XP: 50, Level: 1})
-	habits.Create(ctx, &domain.Habit{UserID: 1, Title: "A", Frequency: domain.FrequencyDaily, CurrentStreak: 3, MaxStreak: 5})
-	habits.Create(ctx, &domain.Habit{UserID: 1, Title: "B", Frequency: domain.FrequencyDaily, CurrentStreak: 0, MaxStreak: 0})
+	mustCreateUser(t, ctx, users, &domain.User{ID: 1, Email: "dash@test.com", XP: 50, Level: 1})
+	mustCreateHabit(t, ctx, habits, &domain.Habit{UserID: 1, Title: "A", Frequency: domain.FrequencyDaily, CurrentStreak: 3, MaxStreak: 5})
+	mustCreateHabit(t, ctx, habits, &domain.Habit{UserID: 1, Title: "B", Frequency: domain.FrequencyDaily, CurrentStreak: 0, MaxStreak: 0})
 	today := truncateDate(time.Now().UTC())
-	checkIns.Create(ctx, &domain.CheckIn{HabitID: 1, Date: today})
+	mustCreateCheckIn(t, ctx, checkIns, &domain.CheckIn{HabitID: 1, Date: today})
 
 	dash, err := svc.Dashboard(ctx, 1)
 	if err != nil {
