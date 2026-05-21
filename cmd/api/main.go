@@ -2,7 +2,6 @@ package main
 
 import (
 	"log"
-	"time"
 
 	_ "habit-tracker/docs" // swagger docs (генерируется: swag init -g cmd/api/main.go)
 
@@ -25,19 +24,20 @@ import (
 func main() {
 	cfg := config.Load()
 
-	db, err := repository.NewPostgres(cfg.DSN())
+	db, err := repository.NewPostgres(cfg)
 	if err != nil {
 		log.Fatalf("database: %v", err)
 	}
 
 	userRepo := repository.NewUserRepository(db)
+	refreshRepo := repository.NewRefreshTokenRepository(db)
 	habitRepo := repository.NewHabitRepository(db)
 	checkInRepo := repository.NewCheckInRepository(db)
 	achievementRepo := repository.NewAchievementRepository(db)
 
-	jwtManager := jwtutil.New(cfg.JWTSecret, 24*time.Hour)
+	jwtManager := jwtutil.New(cfg.JWTSecret, cfg.JWTAccessTTL, cfg.JWTRefreshTTL)
 
-	authUC := usecase.NewAuthService(userRepo, jwtManager)
+	authUC := usecase.NewAuthService(userRepo, refreshRepo, jwtManager)
 	habitUC := usecase.NewHabitService(habitRepo, checkInRepo, userRepo, achievementRepo)
 	achievementUC := usecase.NewAchievementService(achievementRepo)
 

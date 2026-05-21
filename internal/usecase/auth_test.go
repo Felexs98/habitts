@@ -11,9 +11,41 @@ import (
 	"habit-tracker/pkg/jwtutil"
 )
 
-func TestAuthService_Register_Success(t *testing.T) {
+type mockRefreshTokenRepo struct {
+	byJTI map[string]domain.RefreshToken
+}
+
+func newMockRefreshTokenRepo() *mockRefreshTokenRepo {
+	return &mockRefreshTokenRepo{byJTI: make(map[string]domain.RefreshToken)}
+}
+
+func (m *mockRefreshTokenRepo) Store(_ context.Context, userID uint, jti string, expiresAt time.Time) error {
+	m.byJTI[jti] = domain.RefreshToken{UserID: userID, JTI: jti, ExpiresAt: expiresAt}
+	return nil
+}
+
+func (m *mockRefreshTokenRepo) Exists(_ context.Context, jti string) (bool, error) {
+	rt, ok := m.byJTI[jti]
+	if !ok {
+		return false, nil
+	}
+	return rt.ExpiresAt.After(time.Now().UTC()), nil
+}
+
+func (m *mockRefreshTokenRepo) Delete(_ context.Context, jti string) error {
+	delete(m.byJTI, jti)
+	return nil
+}
+
+func newTestAuthService() *AuthService {
 	users := newMockUserRepo()
-	svc := NewAuthService(users, jwtutil.New("test-secret", time.Hour))
+	refresh := newMockRefreshTokenRepo()
+	jwt := jwtutil.New("test-secret", 15*time.Minute, 7*24*time.Hour)
+	return NewAuthService(users, refresh, jwt)
+}
+
+func TestAuthService_Register_Success(t *testing.T) {
+	svc := newTestAuthService()
 
 	result, err := svc.Register(context.Background(), RegisterInput{
 		Email:    "User@Example.com",
@@ -22,8 +54,11 @@ func TestAuthService_Register_Success(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Register() error = %v", err)
 	}
-	if result.Token == "" {
-		t.Fatal("expected non-empty token")
+	if result.AccessToken == "" || result.RefreshToken == "" {
+		t.Fatal("expected access and refresh tokens")
+	}
+	if result.ExpiresIn <= 0 {
+		t.Errorf("expires_in = %d", result.ExpiresIn)
 	}
 	if result.User.Email != "user@example.com" {
 		t.Errorf("email = %q, want user@example.com", result.User.Email)
@@ -37,8 +72,7 @@ func TestAuthService_Register_Success(t *testing.T) {
 }
 
 func TestAuthService_Register_DuplicateEmail(t *testing.T) {
-	users := newMockUserRepo()
-	svc := NewAuthService(users, jwtutil.New("test-secret", time.Hour))
+	svc := newTestAuthService()
 	ctx := context.Background()
 
 	_, err := svc.Register(ctx, RegisterInput{Email: "dup@test.com", Password: "secret12"})
@@ -53,8 +87,7 @@ func TestAuthService_Register_DuplicateEmail(t *testing.T) {
 }
 
 func TestAuthService_Register_InvalidInput(t *testing.T) {
-	users := newMockUserRepo()
-	svc := NewAuthService(users, jwtutil.New("test-secret", time.Hour))
+	svc := newTestAuthService()
 
 	_, err := svc.Register(context.Background(), RegisterInput{Email: "", Password: "secret12"})
 	if !errors.Is(err, domain.ErrInvalidInput) {
@@ -68,8 +101,7 @@ func TestAuthService_Register_InvalidInput(t *testing.T) {
 }
 
 func TestAuthService_Login_Success(t *testing.T) {
-	users := newMockUserRepo()
-	svc := NewAuthService(users, jwtutil.New("test-secret", time.Hour))
+	svc := newTestAuthService()
 	ctx := context.Background()
 
 	_, err := svc.Register(ctx, RegisterInput{Email: "login@test.com", Password: "secret12"})
@@ -81,14 +113,13 @@ func TestAuthService_Login_Success(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Login() error = %v", err)
 	}
-	if result.Token == "" {
-		t.Fatal("expected token")
+	if result.AccessToken == "" {
+		t.Fatal("expected access token")
 	}
 }
 
 func TestAuthService_Login_WrongPassword(t *testing.T) {
-	users := newMockUserRepo()
-	svc := NewAuthService(users, jwtutil.New("test-secret", time.Hour))
+	svc := newTestAuthService()
 	ctx := context.Background()
 
 	_, _ = svc.Register(ctx, RegisterInput{Email: "x@test.com", Password: "secret12"})
@@ -99,9 +130,62 @@ func TestAuthService_Login_WrongPassword(t *testing.T) {
 	}
 }
 
+func TestAuthService_Refresh_Success(t *testing.T) {
+	svc := newTestAuthService()
+	ctx := context.Background()
+
+	reg, err := svc.Register(ctx, RegisterInput{Email: "refresh@test.com", Password: "secret12"})
+	if err != nil {
+		t.Fatalf("Register() error = %v", err)
+	}
+
+	refreshed, err := svc.Refresh(ctx, RefreshInput{RefreshToken: reg.RefreshToken})
+	if err != nil {
+		t.Fatalf("Refresh() error = %v", err)
+	}
+	if refreshed.AccessToken == "" {
+		t.Error("expected new access token")
+	}
+	if refreshed.RefreshToken == reg.RefreshToken {
+		t.Error("expected rotated refresh token")
+	}
+}
+
+func TestAuthService_Refresh_Invalid(t *testing.T) {
+	svc := newTestAuthService()
+	_, err := svc.Refresh(context.Background(), RefreshInput{RefreshToken: "invalid"})
+	if !errors.Is(err, domain.ErrUnauthorized) {
+		t.Errorf("Refresh() error = %v, want ErrUnauthorized", err)
+	}
+}
+
+func TestAuthService_UpdateProfile(t *testing.T) {
+	svc := newTestAuthService()
+	ctx := context.Background()
+
+	reg, _ := svc.Register(ctx, RegisterInput{Email: "patch@test.com", Password: "secret12"})
+	name := "Tracker"
+	newPass := "newsecret12"
+	cur := "secret12"
+
+	user, err := svc.UpdateProfile(ctx, reg.User.ID, UpdateProfileInput{
+		DisplayName:     &name,
+		Password:        &newPass,
+		CurrentPassword: &cur,
+	})
+	if err != nil {
+		t.Fatalf("UpdateProfile() error = %v", err)
+	}
+	if user.DisplayName == nil || *user.DisplayName != "Tracker" {
+		t.Errorf("display_name = %v", user.DisplayName)
+	}
+	if !hash.Compare("newsecret12", user.PasswordHash) {
+		t.Error("password was not updated")
+	}
+}
+
 func TestAuthService_GetMe(t *testing.T) {
-	users := newMockUserRepo()
-	svc := NewAuthService(users, jwtutil.New("test-secret", time.Hour))
+	svc := newTestAuthService()
 	ctx := context.Background()
 
 	reg, _ := svc.Register(ctx, RegisterInput{Email: "me@test.com", Password: "secret12"})

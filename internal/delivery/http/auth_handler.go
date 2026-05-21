@@ -101,6 +101,72 @@ func (h *AuthHandler) Me(c *gin.Context) {
 	c.JSON(http.StatusOK, user)
 }
 
+// Refresh godoc
+// @Summary      Обновление access-токена
+// @Tags         auth
+// @Accept       json
+// @Produce      json
+// @Param        body  body      refreshRequest  true  "Refresh token"
+// @Success      200   {object}  usecase.AuthResult
+// @Failure      401   {object}  errorResponse
+// @Router       /auth/refresh [post]
+func (h *AuthHandler) Refresh(c *gin.Context) {
+	var req refreshRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, errorResponse{Error: err.Error()})
+		return
+	}
+
+	result, err := h.auth.Refresh(c.Request.Context(), usecase.RefreshInput{
+		RefreshToken: req.RefreshToken,
+	})
+	if err != nil {
+		writeError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, result)
+}
+
+// UpdateMe godoc
+// @Summary      Обновление профиля
+// @Tags         auth
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Param        body  body      updateProfileRequest  true  "Поля для обновления"
+// @Success      200   {object}  domain.User
+// @Failure      400   {object}  errorResponse
+// @Failure      401   {object}  errorResponse
+// @Failure      409   {object}  errorResponse
+// @Router       /me [patch]
+func (h *AuthHandler) UpdateMe(c *gin.Context) {
+	userID, ok := middleware.GetUserID(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, errorResponse{Error: "unauthorized"})
+		return
+	}
+
+	var req updateProfileRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, errorResponse{Error: err.Error()})
+		return
+	}
+
+	user, err := h.auth.UpdateProfile(c.Request.Context(), userID, usecase.UpdateProfileInput{
+		Email:           req.Email,
+		DisplayName:     req.DisplayName,
+		Password:        req.Password,
+		CurrentPassword: req.CurrentPassword,
+	})
+	if err != nil {
+		writeError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, user)
+}
+
 func writeError(c *gin.Context, err error) {
 	switch {
 	case errors.Is(err, domain.ErrInvalidInput):

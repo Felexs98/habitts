@@ -1,0 +1,6 @@
+DROP TABLE IF EXISTS user_achievements;
+DROP TABLE IF EXISTS achievements;
+DROP TABLE IF EXISTS check_ins;
+DROP TABLE IF EXISTS habits;
+DROP TABLE IF EXISTS refresh_tokens;
+DROP TABLE IF EXISTS users;

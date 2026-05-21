@@ -12,6 +12,12 @@ type UserRepository interface {
 	Update(ctx context.Context, user *User) error
 }
 
+type RefreshTokenRepository interface {
+	Store(ctx context.Context, userID uint, jti string, expiresAt time.Time) error
+	Exists(ctx context.Context, jti string) (bool, error)
+	Delete(ctx context.Context, jti string) error
+}
+
 type HabitRepository interface {
 	Create(ctx context.Context, habit *Habit) error
 	FindByID(ctx context.Context, id uint) (*Habit, error)

@@ -2,16 +2,21 @@ package config
 
 import (
 	"fmt"
+	"net/url"
 	"os"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type Config struct {
 	AppPort string
 	AppEnv  string
 
-	JWTSecret string
+	JWTSecret        string
+	JWTAccessTTL     time.Duration
+	JWTRefreshTTL    time.Duration
+	MigrationsPath   string
 
 	DBHost     string
 	DBPort     string
@@ -32,7 +37,10 @@ func Load() *Config {
 		AppPort: getenv("APP_PORT", "8080"),
 		AppEnv:  getenv("APP_ENV", "development"),
 
-		JWTSecret: getenv("JWT_SECRET", "dev-secret-change-in-production"),
+		JWTSecret:      getenv("JWT_SECRET", "dev-secret-change-in-production"),
+		JWTAccessTTL:   getenvDuration("JWT_ACCESS_TTL", 15*time.Minute),
+		JWTRefreshTTL:  getenvDuration("JWT_REFRESH_TTL", 168*time.Hour),
+		MigrationsPath: getenv("MIGRATIONS_PATH", "migrations"),
 
 		DBHost:     getenv("DB_HOST", "localhost"),
 		DBPort:     getenv("DB_PORT", "5432"),
@@ -56,6 +64,15 @@ func (c *Config) DSN() string {
 	)
 }
 
+// MigrateURL — DSN для golang-migrate (postgres://).
+func (c *Config) MigrateURL() string {
+	user := url.UserPassword(c.DBUser, c.DBPassword)
+	return fmt.Sprintf(
+		"postgres://%s@%s:%s/%s?sslmode=%s",
+		user.String(), c.DBHost, c.DBPort, c.DBName, c.DBSSLMode,
+	)
+}
+
 func getenv(key, fallback string) string {
 	if v := os.Getenv(key); v != "" {
 		return v
@@ -73,6 +90,18 @@ func getenvInt(key string, fallback int) int {
 		return fallback
 	}
 	return n
+}
+
+func getenvDuration(key string, fallback time.Duration) time.Duration {
+	v := strings.TrimSpace(os.Getenv(key))
+	if v == "" {
+		return fallback
+	}
+	d, err := time.ParseDuration(v)
+	if err != nil || d <= 0 {
+		return fallback
+	}
+	return d
 }
 
 func getenvBool(key string, fallback bool) bool {

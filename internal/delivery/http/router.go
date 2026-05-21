@@ -50,12 +50,14 @@ func NewRouter(h *Handlers, jwtManager *jwtutil.Manager, cfg *config.Config) *gi
 	{
 		auth.POST("/register", h.Auth.Register)
 		auth.POST("/login", h.Auth.Login)
+		auth.POST("/refresh", h.Auth.Refresh)
 	}
 
 	protected := api.Group("")
 	protected.Use(middleware.JWT(jwtManager))
 	{
 		protected.GET("/me", h.Auth.Me)
+		protected.PATCH("/me", h.Auth.UpdateMe)
 		protected.GET("/dashboard", h.Dashboard.Get)
 		protected.GET("/achievements", h.Achievement.List)
 		protected.GET("/habits", h.Habit.List)

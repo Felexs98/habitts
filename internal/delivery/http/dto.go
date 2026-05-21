@@ -10,6 +10,17 @@ type loginRequest struct {
 	Password string `json:"password" binding:"required"`
 }
 
+type refreshRequest struct {
+	RefreshToken string `json:"refresh_token" binding:"required"`
+}
+
+type updateProfileRequest struct {
+	Email           *string `json:"email"`
+	DisplayName     *string `json:"display_name"`
+	Password        *string `json:"password"`
+	CurrentPassword *string `json:"current_password"`
+}
+
 type createHabitRequest struct {
 	Title       string `json:"title" binding:"required"`
 	Description string `json:"description"`
