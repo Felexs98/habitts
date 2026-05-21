@@ -13,8 +13,8 @@ func TestHabitService_CheckIn_AwardsXP(t *testing.T) {
 	svc, users, habits, _ := newTestHabitService()
 	ctx := context.Background()
 
-	users.Create(ctx, &domain.User{ID: 1, Email: "u@test.com", XP: 0, Level: 1})
-	habits.Create(ctx, &domain.Habit{UserID: 1, Title: "Read"})
+	mustCreateUser(t, ctx, users, &domain.User{ID: 1, Email: "u@test.com", XP: 0, Level: 1})
+	mustCreateHabit(t, ctx, habits, &domain.Habit{UserID: 1, Title: "Read"})
 
 	today := time.Date(2026, 5, 20, 15, 0, 0, 0, time.UTC)
 	result, err := svc.CheckIn(ctx, 1, 1, today)
@@ -38,8 +38,8 @@ func TestHabitService_CheckIn_LevelUp(t *testing.T) {
 	svc, users, habits, _ := newTestHabitService()
 	ctx := context.Background()
 
-	users.Create(ctx, &domain.User{ID: 1, Email: "u@test.com", XP: 90, Level: 1})
-	habits.Create(ctx, &domain.Habit{UserID: 1, Title: "Run"})
+	mustCreateUser(t, ctx, users, &domain.User{ID: 1, Email: "u@test.com", XP: 90, Level: 1})
+	mustCreateHabit(t, ctx, habits, &domain.Habit{UserID: 1, Title: "Run"})
 
 	result, err := svc.CheckIn(ctx, 1, 1, time.Date(2026, 5, 20, 0, 0, 0, 0, time.UTC))
 	if err != nil {
@@ -54,8 +54,8 @@ func TestHabitService_CheckIn_Duplicate(t *testing.T) {
 	svc, users, habits, _ := newTestHabitService()
 	ctx := context.Background()
 
-	users.Create(ctx, &domain.User{ID: 1, Email: "u@test.com"})
-	habits.Create(ctx, &domain.Habit{UserID: 1, Title: "Meditate"})
+	mustCreateUser(t, ctx, users, &domain.User{ID: 1, Email: "u@test.com"})
+	mustCreateHabit(t, ctx, habits, &domain.Habit{UserID: 1, Title: "Meditate"})
 	day := time.Date(2026, 5, 20, 0, 0, 0, 0, time.UTC)
 
 	if _, err := svc.CheckIn(ctx, 1, 1, day); err != nil {
@@ -71,7 +71,7 @@ func TestHabitService_CheckIn_Forbidden(t *testing.T) {
 	svc, _, habits, _ := newTestHabitService()
 	ctx := context.Background()
 
-	habits.Create(ctx, &domain.Habit{UserID: 1, Title: "Other user habit"})
+	mustCreateHabit(t, ctx, habits, &domain.Habit{UserID: 1, Title: "Other user habit"})
 
 	_, err := svc.CheckIn(ctx, 2, 1, time.Now().UTC())
 	if !errors.Is(err, domain.ErrForbidden) {
@@ -170,8 +170,8 @@ func TestHabitService_CheckIn_UpdatesStreakInDB(t *testing.T) {
 	svc, users, habits, _ := newTestHabitService()
 	ctx := context.Background()
 
-	users.Create(ctx, &domain.User{ID: 1, Email: "u@test.com"})
-	habits.Create(ctx, &domain.Habit{UserID: 1, Title: "Run"})
+	mustCreateUser(t, ctx, users, &domain.User{ID: 1, Email: "u@test.com"})
+	mustCreateHabit(t, ctx, habits, &domain.Habit{UserID: 1, Title: "Run"})
 	day := time.Date(2026, 5, 20, 0, 0, 0, 0, time.UTC)
 
 	result, err := svc.CheckIn(ctx, 1, 1, day)
@@ -190,13 +190,12 @@ func TestHabitService_CheckIn_UpdatesStreakInDB(t *testing.T) {
 
 func TestHabitService_CheckIn_GrantsStreak7Achievement(t *testing.T) {
 	svc, users, habits, checkIns := newTestHabitService()
-	users.Create(context.Background(), &domain.User{ID: 1, Email: "u@test.com"})
 	ctx := context.Background()
-
-	habits.Create(ctx, &domain.Habit{UserID: 1, Title: "Streak habit", MaxStreak: 6, CurrentStreak: 6})
+	mustCreateUser(t, ctx, users, &domain.User{ID: 1, Email: "u@test.com"})
+	mustCreateHabit(t, ctx, habits, &domain.Habit{UserID: 1, Title: "Streak habit", MaxStreak: 6, CurrentStreak: 6})
 	base := time.Date(2026, 5, 20, 0, 0, 0, 0, time.UTC)
 	for i := 1; i <= 6; i++ {
-		checkIns.Create(ctx, &domain.CheckIn{HabitID: 1, Date: base.AddDate(0, 0, -i)})
+		mustCreateCheckIn(t, ctx, checkIns, &domain.CheckIn{HabitID: 1, Date: base.AddDate(0, 0, -i)})
 	}
 
 	result, err := svc.CheckIn(ctx, 1, 1, base)
@@ -218,10 +217,10 @@ func TestHabitService_Stats_Streak(t *testing.T) {
 	svc, _, habits, checkIns := newTestHabitService()
 	ctx := context.Background()
 
-	habits.Create(ctx, &domain.Habit{UserID: 1, Title: "Water", CurrentStreak: 2, MaxStreak: 5})
+	mustCreateHabit(t, ctx, habits, &domain.Habit{UserID: 1, Title: "Water", CurrentStreak: 2, MaxStreak: 5})
 	today := truncateDate(time.Now().UTC())
-	checkIns.Create(ctx, &domain.CheckIn{HabitID: 1, Date: today})
-	checkIns.Create(ctx, &domain.CheckIn{HabitID: 1, Date: today.AddDate(0, 0, -1)})
+	mustCreateCheckIn(t, ctx, checkIns, &domain.CheckIn{HabitID: 1, Date: today})
+	mustCreateCheckIn(t, ctx, checkIns, &domain.CheckIn{HabitID: 1, Date: today.AddDate(0, 0, -1)})
 
 	stats, err := svc.Stats(ctx, 1, 1)
 	if err != nil {

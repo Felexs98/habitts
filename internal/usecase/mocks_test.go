@@ -264,7 +264,6 @@ type mockAchievementRepo struct {
 	byCode   map[string]*domain.Achievement
 	all      []domain.Achievement
 	byUser   map[uint][]domain.UserAchievement
-	nextAID  uint
 	nextUAID uint
 }
 

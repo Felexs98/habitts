@@ -12,7 +12,7 @@ func TestHabitService_Delete_SoftArchive(t *testing.T) {
 	svc, _, habits, _ := newTestHabitService()
 	ctx := context.Background()
 
-	habits.Create(ctx, &domain.Habit{UserID: 1, Title: "Archive me"})
+	mustCreateHabit(t, ctx, habits, &domain.Habit{UserID: 1, Title: "Archive me"})
 
 	if err := svc.Delete(ctx, 1, 1); err != nil {
 		t.Fatalf("Delete() error = %v", err)
@@ -38,7 +38,7 @@ func TestHabitService_Restore(t *testing.T) {
 	svc, _, habits, _ := newTestHabitService()
 	ctx := context.Background()
 
-	habits.Create(ctx, &domain.Habit{UserID: 1, Title: "Restore me"})
+	mustCreateHabit(t, ctx, habits, &domain.Habit{UserID: 1, Title: "Restore me"})
 	_ = svc.Delete(ctx, 1, 1)
 
 	if err := svc.Restore(ctx, 1, 1); err != nil {
