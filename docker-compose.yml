@@ -34,7 +34,7 @@ services:
       MIGRATIONS_PATH: migrations
       JWT_ACCESS_TTL: 15m
       JWT_REFRESH_TTL: 168h
-      RATE_LIMIT_ENABLED: "true"
+      RATE_LIMIT_ENABLED: "false"
       ARCHIVE_PURGE_ENABLED: "true"
       ARCHIVE_PURGE_DAYS: "7"
       ARCHIVE_PURGE_INTERVAL: 24h

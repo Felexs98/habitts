@@ -48,6 +48,16 @@ make test
 
 По умолчанию: access **15m**, refresh **168h** (`JWT_ACCESS_TTL`, `JWT_REFRESH_TTL`). Refresh хранится в БД по `jti` (отзыв при ротации).
 
+## Нагрузочное тестирование
+
+Сценарии **k6** в [`loadtest/`](loadtest/): `smoke`, `load`, `stress`, `spike`, `write`, `auth`. Перед perf-прогонами: `RATE_LIMIT_ENABLED=false`. Подробно: [loadtest/README.md](loadtest/README.md).
+
+```bash
+k6 run loadtest/smoke.js
+k6 run loadtest/load.js
+k6 run -e VUS=30 -e DURATION=5m loadtest/load.js
+```
+
 ## CI (GitHub Actions)
 
 При push/PR в `main` или `master` запускается workflow [`.github/workflows/ci.yml`](.github/workflows/ci.yml):
