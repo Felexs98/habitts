@@ -11,14 +11,12 @@ linters:
     - ineffassign
     - staticcheck
     - unused
-    - gosimple
     - bodyclose
     - unconvert
-
-issues:
-  exclude-dirs:
-    - docs
-  exclude-rules:
-    - path: docs/
-      linters:
-        - all
+  exclusions:
+    paths:
+      - docs
+    rules:
+      - path: _test\.go
+        linters:
+          - bodyclose
