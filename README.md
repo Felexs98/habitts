@@ -63,6 +63,10 @@ make test
 - `GET /api/v1/achievements` — каталог достижений и статус `earned`
 - Ачивки: `first_check_in`, `check_ins_10`, `level_3`, `streak_7` (выдаются при check-in)
 
+## CORS (веб-фронт)
+
+Браузерные клиенты (React, Vue на `localhost:3000` / `:5173`) могут вызывать API. Настройка через `CORS_ORIGINS` в `.env` (см. `.env.example`).
+
 ## Postman
 
 Коллекция и environment для тестирования API: папка [`postman/`](postman/) — см. [postman/README.md](postman/README.md).
