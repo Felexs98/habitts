@@ -19,6 +19,7 @@ type Handlers struct {
 
 func NewRouter(h *Handlers, jwtManager *jwtutil.Manager) *gin.Engine {
 	r := gin.Default()
+	r.Use(middleware.CORS())
 
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok"})
